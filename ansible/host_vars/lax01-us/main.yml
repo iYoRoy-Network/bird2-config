@@ -6,20 +6,20 @@ node:
   node_token: "de75"
   peering:
     enabled: true
-    display_name:
-    subtitle:
+    display_name: Los Angeles 01
+    subtitle: Provided by VMISS
     protocol_stack: dual_stack
-    endpoint:
-    publickey:
+    endpoint: lax01-us.ecs.iyoroy-infra.top 
+    publickey: As0rZo5b9Bwt4loPGl6iSdtOqkd2p6ExK/Xyoy9OmTU=
     listen_port_policy:
       mode: asn_suffix
       # range:
       #   min: 52000
       #   max: 52999
     exporters:
-      wireguard:
-      bird:
-      node:
+      wireguard: http://lax01-us.intra.iyoroy-infra.top:9586/metrics
+      bird: http://lax01-us.intra.iyoroy-infra.top:9324/metrics
+      node: http://lax01-us.intra.iyoroy-infra.top:9100/metrics
 deploy:
   service_manager: systemd
   bird:
