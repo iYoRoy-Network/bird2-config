@@ -6,17 +6,17 @@ node:
   node_token: "3b06"
   peering:
     enabled: true
-    display_name:
-    subtitle:
+    display_name: Frankfurt 01
+    subtitle: Provided by Vultr
     protocol_stack: dual_stack
-    endpoint:
-    publickey:
+    endpoint: fra01-de.ecs.iyoroy-infra.top
+    publickey: 4zEFOrqHdIDPcjvu6NwbE1AAYBH1bA+SAowysX5fRT4=
     listen_port_policy:
       mode: asn_suffix
     exporters:
-      wireguard:
-      bird:
-      node:
+      wireguard: http://fra01-de.intra.iyoroy-infra.top:9586/metrics
+      bird: http://fra01-de.intra.iyoroy-infra.top:9324/metrics
+      node: http://fra01-de.intra.iyoroy-infra.top:9100/metrics
 deploy:
   service_manager: systemd
   bird:
