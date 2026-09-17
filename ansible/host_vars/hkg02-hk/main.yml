@@ -6,17 +6,17 @@ node:
   node_token: "7d89"
   peering:
     enabled: true
-    display_name:
-    subtitle:
+    display_name: Hong Kong 02
+    subtitle: Sponsored by MoeDove
     protocol_stack: dual_stack
-    endpoint:
-    publickey:
+    endpoint: hkg02-hk.ecs.iyoroy-infra.top
+    publickey: bg+KnzVupBrOQntHFFVzvBx+3sqYVoyJRantT6m5fm8=
     listen_port_policy:
       mode: asn_suffix
     exporters:
-      wireguard:
-      bird:
-      node:
+      wireguard: http://hkg02-hk.intra.iyoroy-infra.top:9586/metrics
+      bird: http://hkg02-hk.intra.iyoroy-infra.top:9324/metrics
+      node: http://hkg02-hk.intra.iyoroy-infra.top:9100/metrics
 deploy:
   service_manager: systemd
   bird:
