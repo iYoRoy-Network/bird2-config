@@ -11,6 +11,7 @@ node:
     protocol_stack: dual_stack
     endpoint: hkg02-hk.ecs.iyoroy-infra.top
     publickey: bg+KnzVupBrOQntHFFVzvBx+3sqYVoyJRantT6m5fm8=
+    agent_url: https://hkg02-hk.intra.iyoroy-infra.top:8443
     listen_port_policy:
       mode: asn_suffix
     exporters:
