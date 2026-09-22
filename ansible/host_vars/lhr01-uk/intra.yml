@@ -1,0 +1,18 @@
+intra:
+  auto_confed_peers: 
+    - node: cdg01-fr
+      interface: intra_cdg01
+      wireguard:
+        public_key: vLZLdiJrDyGpUIY5y/qR5XIvyaWCcTM4uk9Y6kdIKk8=
+        listen_port: 10123
+        fwmark: '4242'
+        address_mode: intra_local
+      bgp:
+        file: cdg01.conf
+        protocol: intra_ibgp_cdg01
+        ipv4:
+          import_policy: full
+          export_policy: full
+        ipv6:
+          import_policy: full
+          export_policy: full

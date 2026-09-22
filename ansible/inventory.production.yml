@@ -35,3 +35,5 @@ bird_nodes:
     cdg01-fr:
       ansible_host: ipv4.cdg01-fr.ecs.iyoroy-infra.top
       ansible_port: 50224
+    lhr01-uk:
+      ansible_host: ipv4.lhr01-uk.ecs.iyoroy-infra.top

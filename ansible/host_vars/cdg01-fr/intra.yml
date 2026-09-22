@@ -48,3 +48,18 @@ intra:
       bgp:
         file: tyo01.conf
         protocol: intra_ibgp_tyo01
+    - node: lhr01-uk
+      interface: intra_lhr01
+      wireguard:
+        public_key: K1iZgKAHPogRR1glXTwd3FXqbKKAomilYhPKp5CbX1A=
+        listen_port: 50229
+        address_mode: intra_local
+      bgp:
+        file: lhr01.conf
+        protocol: intra_ibgp_lhr01
+        ipv4:
+          import_policy: full
+          export_policy: full
+        ipv6:
+          import_policy: full
+          export_policy: full

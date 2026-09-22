@@ -1,0 +1,14 @@
+node:
+  name: lhr01-uk
+  tier: 3
+  region: 2
+  node_id: 4
+  node_token: "43af"
+  peering:
+    enabled: false
+deploy:
+  service_manager: systemd
+  bird:
+    enabled: true
+  wireguard:
+    enabled: true
