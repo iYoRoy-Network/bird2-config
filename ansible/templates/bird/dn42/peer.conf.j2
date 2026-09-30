@@ -3,7 +3,8 @@
 {% for session in peer_bgp.sessions %}
 protocol bgp 'dn42_peer_{{ peer.asn }}{% if session.name != 'mp-bgp' %}_{{ session.name }}{% endif %}' from dnpeers {
 {% if peer.description is defined and peer.description is not none %}    description "{{ peer.description | replace('\\', '\\\\') | replace('"', '\\"') }}";
-{% endif %}{% if session.transport == 'ipv6_link_local' %}    neighbor {{ session.neighbor }}{% if session.interface is defined and session.interface %} % '{{ session.interface }}'{% endif %} as {{ peer.asn }};
+{% endif %}{% if session.transport == 'ipv6_link_local' %}    direct;
+    neighbor {{ session.neighbor }}{% if session.interface is defined and session.interface %} % '{{ session.interface }}'{% endif %} as {{ peer.asn }};
 {% else %}    neighbor {{ session.neighbor }} as {{ peer.asn }};
     source address {{ session.source }};
 {% endif %}{% if session.extended_next_hop | default(false) %}    ipv4 {
@@ -28,7 +29,8 @@ protocol bgp 'dn42_peer_{{ peer.asn }}' from dnpeers {
 {% if peer.description is defined and peer.description is not none %}    description "{{ peer.description | replace('\\', '\\\\') | replace('"', '\\"') }}";
 {% endif %}{% if peer_dst_mode %}    neighbor {{ peer.dst }} as {{ peer.asn }}{% if peer.neighbor.port is defined %} port {{ peer.neighbor.port }}{% endif %};
     source address {{ peer.src }};
-{% else %}    neighbor {{ peer_lla }}{% if peer_interface %} % '{{ peer_interface }}'{% endif %} as {{ peer.asn }}{% if peer.neighbor.port is defined %} port {{ peer.neighbor.port }}{% endif %};
+{% else %}{% if peer_interface %}    direct;
+{% endif %}    neighbor {{ peer_lla }}{% if peer_interface %} % '{{ peer_interface }}'{% endif %} as {{ peer.asn }}{% if peer.neighbor.port is defined %} port {{ peer.neighbor.port }}{% endif %};
 {% endif %}{% if peer_extended_next_hop %}    ipv4 {
         extended next hop;
     };
