@@ -29,15 +29,11 @@ iana:
           address: fe80::232:17ff:fe4b:e4e0
           interface: eth0
         communities:
-        - NO_EXPORT
-        - [205369, 2, 0]
-        - [205369, 65535, 65282]
+        - NO_ADVERTISE
       - prefix: fd00:7720::1/128
         via:
           address: fe80::232:17ff:fe4b:e4e0
           interface: eth0
         communities:
-        - NO_EXPORT
-        - [205369, 2, 0]
-        - [205369, 65535, 65282]
+        - NO_ADVERTISE
   router_id: 103.213.4.103

@@ -15,14 +15,10 @@
 {% if 'default' in ns.import_policies %}
 filter intra_ibgp_import_default {
     # no-advertise
-    if bgp_large_community ~ [(205369,65535,65282)] || bgp_large_community ~ [(4242422024,65535,65282)] then reject;
     if bgp_community ~ [(65535,65282)] then reject;
 
-    # control: allow
-    if !(bgp_large_community ~ [(205369,1,1)] || bgp_large_community ~ [(4242422024,1,1)]) then reject;
-
-    # identify: private
-    if bgp_large_community ~ [(205369,2,0)] || bgp_large_community ~ [(4242422024,2,0)] then accept;
+    # require known origin
+    if bgp_large_community ~ [(205369,2,*)] || bgp_large_community ~ [(4242422024,2,*)] then accept;
 
     # default: reject
     reject;
@@ -31,14 +27,10 @@ filter intra_ibgp_import_default {
 {% if 'default' in ns.export_policies %}
 filter intra_ibgp_export_default {
     # no-advertise
-    if bgp_large_community ~ [(205369,65535,65282)] || bgp_large_community ~ [(4242422024,65535,65282)] then reject;
     if bgp_community ~ [(65535,65282)] then reject;
 
-    # control: allow
-    if !(bgp_large_community ~ [(205369,1,1)] || bgp_large_community ~ [(4242422024,1,1)]) then reject;
-
-    # identify: private
-    if bgp_large_community ~ [(205369,2,0)] || bgp_large_community ~ [(4242422024,2,0)] then accept;
+    # require known origin
+    if bgp_large_community ~ [(205369,2,*)] || bgp_large_community ~ [(4242422024,2,*)] then accept;
 
     # default: reject
     reject;
@@ -48,7 +40,6 @@ filter intra_ibgp_export_default {
 {% if 'iana_full' in ns.import_policies %}
 filter intra_ibgp_import_iana_full {
     # no-advertise
-    if bgp_large_community ~ [(205369,65535,65282)] || bgp_large_community ~ [(4242422024,65535,65282)] then reject;
     if bgp_community ~ [(65535,65282)] then reject;
 
     # control: reject dn42
@@ -64,7 +55,6 @@ filter intra_ibgp_import_iana_full {
 {% if 'iana_full' in ns.export_policies %}
 filter intra_ibgp_export_iana_full {
     # no-advertise
-    if bgp_large_community ~ [(205369,65535,65282)] || bgp_large_community ~ [(4242422024,65535,65282)] then reject;
     if bgp_community ~ [(65535,65282)] then reject;
 
     # control: reject from dn42
@@ -81,7 +71,6 @@ filter intra_ibgp_export_iana_full {
 {% if 'dn42_full' in ns.import_policies %}
 filter intra_ibgp_import_dn42_full {
     # no-advertise
-    if bgp_large_community ~ [(205369,65535,65282)] || bgp_large_community ~ [(4242422024,65535,65282)] then reject;
     if bgp_community ~ [(65535,65282)] then reject;
 
     # control: reject from iana
@@ -97,7 +86,6 @@ filter intra_ibgp_import_dn42_full {
 {% if 'dn42_full' in ns.export_policies %}
 filter intra_ibgp_export_dn42_full {
     # no-advertise
-    if bgp_large_community ~ [(205369,65535,65282)] || bgp_large_community ~ [(4242422024,65535,65282)] then reject;
     if bgp_community ~ [(65535,65282)] then reject;
 
     # control: reject from iana
@@ -114,7 +102,6 @@ filter intra_ibgp_export_dn42_full {
 {% if 'full' in ns.import_policies %}
 filter intra_ibgp_import_full {
     # no-advertise
-    if bgp_large_community ~ [(205369,65535,65282)] || bgp_large_community ~ [(4242422024,65535,65282)] then reject;
     if bgp_community ~ [(65535,65282)] then reject;
 
     # require known origin
@@ -127,7 +114,6 @@ filter intra_ibgp_import_full {
 {% if 'full' in ns.export_policies %}
 filter intra_ibgp_export_full {
     # no-advertise
-    if bgp_large_community ~ [(205369,65535,65282)] || bgp_large_community ~ [(4242422024,65535,65282)] then reject;
     if bgp_community ~ [(65535,65282)] then reject;
 
     # require known origin
@@ -141,7 +127,6 @@ filter intra_ibgp_export_full {
 {% if '3377confed_iana' in ns.import_policies %}
 filter intra_ibgp_import_3377confed_iana {
     # no-advertise
-    if bgp_large_community ~ [(205369,65535,65282)] || bgp_large_community ~ [(4242422024,65535,65282)] then reject;
     if bgp_community ~ [(65535,65282)] then reject;
 
     # control: allow from iana
@@ -160,7 +145,6 @@ filter intra_ibgp_import_3377confed_iana {
 {% if '3377confed_iana' in ns.export_policies %}
 filter intra_ibgp_export_3377confed_iana {
     # no-advertise
-    if bgp_large_community ~ [(205369,65535,65282)] || bgp_large_community ~ [(4242422024,65535,65282)] then reject;
     if bgp_community ~ [(65535,65282)] then reject;
 
     # control: allow from iana

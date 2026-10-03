@@ -140,7 +140,7 @@
         src: "../templates/bird/intra/{{ item }}.j2"
         dest: "{{ node_output_dir }}/intra/{{ item }}"
         mode: "0644"
-      loop: "{{ intra_module_files | default(['filter.conf','ibgp.conf','static.conf']) }}"
+      loop: "{{ intra_module_files | default(['ibgp.conf','static.conf']) }}"
 
     - name: Render intra iBGP sessions
       delegate_to: localhost

@@ -4,8 +4,9 @@ protocol kernel kernel_v4{
         import none;
         export filter {
             if source = RTS_STATIC then {
-                if bgp_large_community ~ [(205369,2,0)] then accept;
-                if bgp_large_community ~ [(4242422024,2,0)] then accept;
+                if bgp_large_community ~ [(205369,*,*)] then accept;
+                if bgp_large_community ~ [(4242422024,*,*)] then accept;
+                if bgp_community ~ [(65535,65282)] then accept;
                 reject;
             }
             krt_prefsrc = INTRA_LOOPBACKv4;
@@ -21,8 +22,9 @@ protocol kernel kernel_v6 {
         import none;
         export filter {
             if source = RTS_STATIC then {
-                if bgp_large_community ~ [(205369,2,0)] then accept;
-                if bgp_large_community ~ [(4242422024,2,0)] then accept;
+                if bgp_large_community ~ [(205369,*,*)] then accept;
+                if bgp_large_community ~ [(4242422024,*,*)] then accept;
+                if bgp_community ~ [(65535,65282)] then accept;
                 reject;
             }
             krt_prefsrc = INTRA_LOOPBACKv6;

@@ -24,6 +24,5 @@ iana:
         address: fe80::fc00:6ff:fe3c:d801
         interface: enp1s0
       communities:
-      - NO_EXPORT
-      - [205369, 65535, 65282]
+      - NO_ADVERTISE
   router_id: 80.240.31.71

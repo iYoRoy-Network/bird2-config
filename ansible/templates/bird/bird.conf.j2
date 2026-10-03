@@ -74,7 +74,7 @@ protocol device {
 {% if _dn42_has_ix %}{% set dn42_default_includes = dn42_default_includes + ['ix.conf'] %}{% endif %}
 
 {# ── Intra includes (auto-derived, modules.intra.includes overrides) ── #}
-{% set intra_default_includes = ['filter.conf', 'ibgp.conf', 'static.conf'] %}
+{% set intra_default_includes = ['ibgp.conf', 'static.conf'] %}
 
 {# ── Render includes ── #}
 {% set root_includes = ['filter.conf'] %}
