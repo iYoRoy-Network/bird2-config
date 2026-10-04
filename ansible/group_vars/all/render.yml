@@ -1,0 +1,3 @@
+---
+# Render settings
+render_root: '{{ inventory_dir }}/../.rendered'
