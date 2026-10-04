@@ -7,6 +7,9 @@
   vars:
     node_output_dir: "{{ render_root }}/{{ inventory_hostname }}"
   tasks:
+    - name: Derive node addressing variables
+      ansible.builtin.include_tasks: ../tasks/derive-node-addressing.yml
+
     - name: Check DN42 peer definitions directory
       delegate_to: localhost
       become: false

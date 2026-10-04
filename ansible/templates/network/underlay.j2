@@ -6,8 +6,8 @@ iface net_underlay
     pre-up mkdir -p /etc/iproute2 && grep -q "1142 dn42-wg" /etc/iproute2/rt_tables || echo "1142 dn42-wg" >> /etc/iproute2/rt_tables
 
     # --- Underlay loopback（永远存在，自动派生） ---
-    address 100.64.{{ node.tier * 10 + node.region }}.{{ node.node_id }}/32
-    address {{ intra_global.loopback_v6_prefix }}:{{ node.tier }}:{{ node.region }}::{{ node.node_token }}/128
+    address {{ derived_intra_loopback_v4 }}/32
+    address {{ derived_intra_loopback_v6 }}/128
 
     # --- WireGuard fwmark 策略路由 ---
     # 只复制 WireGuard underlay 出口需要的小集合（默认/直连/静态/DHCP/RA）。不要遍历整张 main 表：

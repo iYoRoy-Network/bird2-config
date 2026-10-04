@@ -24,6 +24,9 @@
     peer_wireguard_source: "{{ wireguard_deploy.render_root }}/{{ inventory_hostname }}/dn42_{{ target_peer_asn }}.conf"
     peer_wireguard_target: "{{ wireguard_deploy.remote_dir }}/dn42_{{ target_peer_asn }}.conf"
   tasks:
+    - name: Derive node addressing variables
+      ansible.builtin.include_tasks: ../tasks/derive-node-addressing.yml
+
     - name: Validate target peer variables
       ansible.builtin.assert:
         quiet: true

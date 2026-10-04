@@ -13,6 +13,9 @@
       ansible.builtin.meta: end_host
       when: not (deploy.wireguard.enabled | default(wireguard_deploy.enabled | default(false)))
 
+    - name: Derive node addressing variables
+      ansible.builtin.include_tasks: ../tasks/derive-node-addressing.yml
+
     - name: Check DN42 peer definitions directory
       delegate_to: localhost
       become: false

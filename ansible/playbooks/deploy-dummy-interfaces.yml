@@ -12,6 +12,9 @@
       ansible.builtin.meta: end_host
       when: not (deploy.network_enabled | default(true))
 
+    - name: Derive node addressing variables
+      ansible.builtin.include_tasks: ../tasks/derive-node-addressing.yml
+
     - name: Refuse local inventory for network deployment
       ansible.builtin.assert:
         that:

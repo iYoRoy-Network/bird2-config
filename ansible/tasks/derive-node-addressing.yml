@@ -1,0 +1,12 @@
+---
+# Derive per-node addressing once so templates reference variables instead of
+# recomputing the formulas. Included by every play that renders a template
+# which needs them.
+- name: Derive node addressing variables
+  ansible.builtin.set_fact:
+    derived_public_ipv6: "{{ '2a14:7583:f2%01x4::%s' | format(node.region * 2, node.node_token) }}"
+    derived_public_net_v6: "{{ '2a14:7583:f2%01x0::/43' | format(node.region * 2) }}"
+    derived_intra_as: "{{ intra_global.confederation_as_format | format(node.tier, node.region, node.node_id) }}"
+    derived_intra_loopback_v4: "{{ '100.64.%d.%d' | format(node.tier * 10 + node.region, node.node_id) }}"
+    derived_intra_loopback_v6: "{{ '%s:%d:%d::%s' | format(intra_global.loopback_v6_prefix, node.tier, node.region, node.node_token) }}"
+    derived_intra_lla: "{{ '%s:%d:%d:%s' | format(intra_global.link_local_prefix, node.tier, node.region, node.node_token) }}"

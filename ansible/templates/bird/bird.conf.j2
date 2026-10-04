@@ -2,13 +2,6 @@
 log syslog all;
 
 {% endif %}
-{% set derived_public_region_nibble = node.region * 2 %}
-{% set derived_public_ipv6 = '2a14:7583:f2%01x4::%s' | format(derived_public_region_nibble, node.node_token) %}
-{% set derived_public_net_v6 = '2a14:7583:f2%01x0::/43' | format(derived_public_region_nibble) %}
-{% set derived_intra_as = intra_global.confederation_as_format | format(node.tier, node.region, node.node_id) %}
-{% set derived_intra_loopback_v4 = '100.64.%d.%d' | format(node.tier * 10 + node.region, node.node_id) %}
-{% set derived_intra_loopback_v6 = '%s:%d:%d::%s' | format(intra_global.loopback_v6_prefix, node.tier, node.region, node.node_token) %}
-{% set derived_intra_lla = '%s:%d:%d:%s' | format(intra_global.link_local_prefix, node.tier, node.region, node.node_token) %}
 {% if iana is defined and iana.enabled | default(false) %}
 define IANA_OWNAS                = {{ iana_global.own_as }};
 define IANA_OWNIPv6              = {{ iana.own_ipv6 | default(derived_public_ipv6) }};
