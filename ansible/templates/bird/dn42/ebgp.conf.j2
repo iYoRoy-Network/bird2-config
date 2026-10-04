@@ -1,10 +1,10 @@
 function dn42_ebgp_add_community(){
-    bgp_large_community.add((4242422024,2,101));
-    bgp_large_community.add((4242422024,2,102));
+    bgp_large_community.add((DN42_OWNAS,2,101));
+    bgp_large_community.add((DN42_OWNAS,2,102));
 }
 
 function dn42_ebgp_check_community(){
-    if !(bgp_large_community ~ [(4242422024,2,*)]) then return false;
+    if !(bgp_large_community ~ [(DN42_OWNAS,2,*)]) then return false;
     if bgp_community ~ [(65535,65281)] then reject;
     if bgp_community ~ [(65535,65282)] then reject;
 

@@ -1,0 +1,11 @@
+---
+# BIRD define names for the domains this node actually runs, so templates that
+# reference both domains (filter/kernel/intra) stay valid on nodes that enable
+# only one of them.
+- name: Derive enabled own-ASN define names
+  ansible.builtin.set_fact:
+    bird_own_as_defines: >-
+      {{
+        (['DN42_OWNAS'] if dn42 is defined else [])
+        + (['IANA_OWNAS'] if (iana is defined and iana.enabled | default(false)) else [])
+      }}

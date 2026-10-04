@@ -10,6 +10,9 @@
     - name: Derive node addressing variables
       ansible.builtin.include_tasks: ../tasks/derive-node-addressing.yml
 
+    - name: Derive enabled own-ASN define names
+      ansible.builtin.include_tasks: ../tasks/derive-bird-context.yml
+
     - name: Check DN42 peer definitions directory
       delegate_to: localhost
       become: false

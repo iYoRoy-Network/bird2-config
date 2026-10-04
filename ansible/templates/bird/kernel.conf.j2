@@ -4,13 +4,12 @@ protocol kernel kernel_v4{
         import none;
         export filter {
             if source = RTS_STATIC then {
-                if bgp_large_community ~ [(205369,*,*)] then accept;
-                if bgp_large_community ~ [(4242422024,*,*)] then accept;
-                if bgp_community ~ [(65535,65282)] then accept;
+{% for own_as in bird_own_as_defines %}                if bgp_large_community ~ [({{ own_as }},*,*)] then accept;
+{% endfor %}                if bgp_community ~ [(65535,65282)] then accept;
                 reject;
             }
             krt_prefsrc = INTRA_LOOPBACKv4;
-{% if dn42 is defined and dn42.own_ip is defined %}            if bgp_large_community ~ [(4242422024,*,*)] && !(net ~ INTRA_PREFIX_V4) then krt_prefsrc = {{ dn42.own_ip }};
+{% if dn42 is defined and dn42.own_ip is defined %}            if bgp_large_community ~ [(DN42_OWNAS,*,*)] && !(net ~ INTRA_PREFIX_V4) then krt_prefsrc = {{ dn42.own_ip }};
 {% endif %}            accept;
         };
     };
@@ -22,14 +21,13 @@ protocol kernel kernel_v6 {
         import none;
         export filter {
             if source = RTS_STATIC then {
-                if bgp_large_community ~ [(205369,*,*)] then accept;
-                if bgp_large_community ~ [(4242422024,*,*)] then accept;
-                if bgp_community ~ [(65535,65282)] then accept;
+{% for own_as in bird_own_as_defines %}                if bgp_large_community ~ [({{ own_as }},*,*)] then accept;
+{% endfor %}                if bgp_community ~ [(65535,65282)] then accept;
                 reject;
             }
             krt_prefsrc = INTRA_LOOPBACKv6;
-{% if dn42 is defined and dn42.own_ipv6 is defined %}            if bgp_large_community ~ [(4242422024,*,*)] && !(net ~ INTRA_PREFIX_V6) then krt_prefsrc = {{ dn42.own_ipv6 }};
-{% endif %}{% if iana is defined and iana.enabled | default(false) %}            if bgp_large_community ~ [(205369,*,*)] && !(net ~ INTRA_PREFIX_V6) then krt_prefsrc = IANA_OWNIPv6;
+{% if dn42 is defined and dn42.own_ipv6 is defined %}            if bgp_large_community ~ [(DN42_OWNAS,*,*)] && !(net ~ INTRA_PREFIX_V6) then krt_prefsrc = {{ dn42.own_ipv6 }};
+{% endif %}{% if iana is defined and iana.enabled | default(false) %}            if bgp_large_community ~ [(IANA_OWNAS,*,*)] && !(net ~ INTRA_PREFIX_V6) then krt_prefsrc = IANA_OWNIPv6;
 {% endif %}            accept;
         };
     };

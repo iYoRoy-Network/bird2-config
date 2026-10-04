@@ -4,9 +4,8 @@ function remove_confederation_as() {
 }
 
 function remove_private_community(){
-    bgp_large_community.delete([(4242422024, *, *)]);
-    bgp_large_community.delete([(205369, *, *)]);
-}
+{% for own_as in bird_own_as_defines %}    bgp_large_community.delete([({{ own_as }}, *, *)]);
+{% endfor %}}
 
 function get_unique_as_path_len() -> int
 int last;

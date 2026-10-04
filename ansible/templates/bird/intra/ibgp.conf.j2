@@ -12,14 +12,15 @@
 {% if ipv4_export_policy not in ns.export_policies %}{% set ns.export_policies = ns.export_policies + [ipv4_export_policy] %}{% endif %}
 {% if ipv6_export_policy not in ns.export_policies %}{% set ns.export_policies = ns.export_policies + [ipv6_export_policy] %}{% endif %}
 {% endfor %}
+{% set iana_on = iana is defined and iana.enabled | default(false) %}
 {% if 'default' in ns.import_policies %}
 filter intra_ibgp_import_default {
     # no-advertise
     if bgp_community ~ [(65535,65282)] then reject;
 
-    # require known origin
-    if bgp_large_community ~ [(205369,2,*)] || bgp_large_community ~ [(4242422024,2,*)] then accept;
-
+    # require a known origin in an enabled domain
+{% for own_as in bird_own_as_defines %}    if bgp_large_community ~ [({{ own_as }},2,*)] then accept;
+{% endfor %}
     # default: reject
     reject;
 }
@@ -29,9 +30,9 @@ filter intra_ibgp_export_default {
     # no-advertise
     if bgp_community ~ [(65535,65282)] then reject;
 
-    # require known origin
-    if bgp_large_community ~ [(205369,2,*)] || bgp_large_community ~ [(4242422024,2,*)] then accept;
-
+    # require a known origin in an enabled domain
+{% for own_as in bird_own_as_defines %}    if bgp_large_community ~ [({{ own_as }},2,*)] then accept;
+{% endfor %}
     # default: reject
     reject;
 }
@@ -42,11 +43,8 @@ filter intra_ibgp_import_iana_full {
     # no-advertise
     if bgp_community ~ [(65535,65282)] then reject;
 
-    # control: reject dn42
-    if bgp_large_community ~ [(4242422024,2,*)] then reject;
-
-    # control: allow from iana
-    if bgp_large_community ~ [(205369,2,*)] then accept;
+    # iana origin only
+    if bgp_large_community ~ [(IANA_OWNAS,2,*)] then accept;
 
     # default: reject
     reject;
@@ -57,11 +55,8 @@ filter intra_ibgp_export_iana_full {
     # no-advertise
     if bgp_community ~ [(65535,65282)] then reject;
 
-    # control: reject from dn42
-    if bgp_large_community ~ [(4242422024,2,*)] then reject;
-
-    # control: allow from iana
-    if bgp_large_community ~ [(205369,2,*)] then accept;
+    # iana origin only
+    if bgp_large_community ~ [(IANA_OWNAS,2,*)] then accept;
 
     # default: reject
     reject;
@@ -73,11 +68,8 @@ filter intra_ibgp_import_dn42_full {
     # no-advertise
     if bgp_community ~ [(65535,65282)] then reject;
 
-    # control: reject from iana
-    if bgp_large_community ~ [(205369,2,*)] then reject;
-
-    # control: allow from dn42
-    if bgp_large_community ~ [(4242422024,2,*)] then accept;
+    # dn42 origin only
+    if bgp_large_community ~ [(DN42_OWNAS,2,*)] then accept;
 
     # default: reject
     reject;
@@ -88,11 +80,8 @@ filter intra_ibgp_export_dn42_full {
     # no-advertise
     if bgp_community ~ [(65535,65282)] then reject;
 
-    # control: reject from iana
-    if bgp_large_community ~ [(205369,2,*)] then reject;
-
-    # control: allow from dn42
-    if bgp_large_community ~ [(4242422024,2,*)] then accept;
+    # dn42 origin only
+    if bgp_large_community ~ [(DN42_OWNAS,2,*)] then accept;
 
     # default: reject
     reject;
@@ -104,9 +93,9 @@ filter intra_ibgp_import_full {
     # no-advertise
     if bgp_community ~ [(65535,65282)] then reject;
 
-    # require known origin
-    if bgp_large_community ~ [(205369,2,*)] || bgp_large_community ~ [(4242422024,2,*)] then accept;
-
+    # require a known origin in an enabled domain
+{% for own_as in bird_own_as_defines %}    if bgp_large_community ~ [({{ own_as }},2,*)] then accept;
+{% endfor %}
     # default: reject
     reject;
 }
@@ -116,9 +105,9 @@ filter intra_ibgp_export_full {
     # no-advertise
     if bgp_community ~ [(65535,65282)] then reject;
 
-    # require known origin
-    if bgp_large_community ~ [(205369,2,*)] || bgp_large_community ~ [(4242422024,2,*)] then accept;
-
+    # require a known origin in an enabled domain
+{% for own_as in bird_own_as_defines %}    if bgp_large_community ~ [({{ own_as }},2,*)] then accept;
+{% endfor %}
     # default: reject
     reject;
 }
@@ -129,13 +118,13 @@ filter intra_ibgp_import_3377confed_iana {
     # no-advertise
     if bgp_community ~ [(65535,65282)] then reject;
 
-    # control: allow from iana
-    if bgp_large_community ~ [(205369,2,*)] then accept;
+{% if iana_on %}    # control: allow from iana
+    if bgp_large_community ~ [(IANA_OWNAS,2,*)] then accept;
 
-    # allow from 3377 igp
+{% endif %}    # allow from 3377 igp
     if bgp_large_community ~ [(4242423377, 0, 36)] then {
-        bgp_large_community.add((205369,2,100));
-        accept;
+{% if iana_on %}        bgp_large_community.add((IANA_OWNAS,2,100));
+{% endif %}        accept;
     }
 
     # default: reject
@@ -147,13 +136,13 @@ filter intra_ibgp_export_3377confed_iana {
     # no-advertise
     if bgp_community ~ [(65535,65282)] then reject;
 
-    # control: allow from iana
-    if bgp_large_community ~ [(205369,2,*)] then accept;
+{% if iana_on %}    # control: allow from iana
+    if bgp_large_community ~ [(IANA_OWNAS,2,*)] then accept;
 
-    # allow from 3377 igp
+{% endif %}    # allow from 3377 igp
     if bgp_large_community ~ [(4242423377, 0, 36)] then {
-        bgp_large_community.delete((205369,2,100));
-        accept;
+{% if iana_on %}        bgp_large_community.delete((IANA_OWNAS,2,100));
+{% endif %}        accept;
     }
 
     # default: reject
