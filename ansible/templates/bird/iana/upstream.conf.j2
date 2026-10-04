@@ -1,10 +1,9 @@
 function iana_upstream_add_community(){
-    bgp_large_community.add((205369,1,1));
     bgp_large_community.add((205369,2,102));
 }
 
 function iana_upstream_check_community(){
-    if !(bgp_large_community ~ [(205369,1,1)]) then return false;
+    if !(bgp_large_community ~ [(205369,2,*)]) then return false;
     if bgp_community ~ [(65535,65281)] then reject;
     if bgp_community ~ [(65535,65282)] then reject;
 

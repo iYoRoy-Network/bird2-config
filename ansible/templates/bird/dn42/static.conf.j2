@@ -4,7 +4,6 @@ protocol static dn42_static_v4{
 
     ipv4 {
         import filter{
-            bgp_large_community.add((4242422024,1,1));
             bgp_large_community.add((4242422024,2,100));
             accept;
         };
@@ -19,7 +18,6 @@ protocol static dn42_static_v6{
 
     ipv6 {
         import filter{
-            bgp_large_community.add((4242422024,1,1));
             bgp_large_community.add((4242422024,2,100));
             accept;
         };

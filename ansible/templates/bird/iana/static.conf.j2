@@ -16,7 +16,6 @@ protocol static iana_static_advertise{
 {% endif %}{% endfor %}
     ipv6 {
         import filter{
-            bgp_large_community.add((205369,1,1));
             bgp_large_community.add((205369,2,100));
             accept;
         };
