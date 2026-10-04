@@ -1,2 +1,3 @@
 - import_playbook: render-wireguard.yml
+- import_playbook: validate-wireguard.yml
 - import_playbook: deploy-wireguard.yml
