@@ -20,9 +20,3 @@ node:
       wireguard: http://lax01-us.intra.iyoroy-infra.top:9586/metrics
       bird: http://lax01-us.intra.iyoroy-infra.top:9324/metrics
       node: http://lax01-us.intra.iyoroy-infra.top:9100/metrics
-deploy:
-  service_manager: systemd
-  bird:
-    enabled: true
-  wireguard:
-    enabled: true

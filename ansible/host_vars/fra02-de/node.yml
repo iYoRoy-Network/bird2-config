@@ -6,9 +6,3 @@ node:
   node_token: "d131"
   peering:
     enabled: false
-deploy:
-  service_manager: openrc
-  bird:
-    enabled: true
-  wireguard:
-    enabled: true

@@ -1,0 +1,6 @@
+deploy:
+  service_manager: openrc
+  bird:
+    enabled: true
+  wireguard:
+    enabled: true
