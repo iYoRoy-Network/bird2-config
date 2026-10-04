@@ -1,6 +1,6 @@
 dn42:
-  region: 52
-  country: 1344
+  region: ASIA_EAST
+  country: HONG_KONG
   flapalerted:
     neighbor:
       port: 1790

@@ -1,8 +1,8 @@
 dn42:
   own_ip: 172.20.234.227
   own_ipv6: fd18:3e15:61d0::3
-  region: 52
-  country: 1392
+  region: ASIA_EAST
+  country: JAPAN
   flapalerted:
     local: 172.20.234.227
     neighbor:

@@ -1,6 +1,6 @@
 dn42:
-  region: 52
-  country: 1392
+  region: ASIA_EAST
+  country: JAPAN
   flapalerted:
     neighbor:
       port: 1790

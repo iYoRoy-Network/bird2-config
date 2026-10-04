@@ -1,8 +1,8 @@
 dn42:
   own_ip: 172.20.234.228
   own_ipv6: fd18:3e15:61d0::4
-  region: 41
-  country: 1276
+  region: EUROPE
+  country: GERMANY
   flapalerted:
     local: 172.20.234.228
     neighbor:

@@ -17,8 +17,16 @@ define DN42_OWNNET               = {{ dn42_global.own_net }};
 define DN42_OWNNETv6             = {{ dn42_global.own_net_v6 }};
 define DN42_OWNNETSET            = {{ dn42_global.own_netset }};
 define DN42_OWNNETSETv6          = {{ dn42_global.own_netset_v6 }};
-define DN42_REGION               = {{ dn42.region }};
-define DN42_COUNTRY              = {{ dn42.country }};
+
+{% for _name, _code in dn42_geo_region.items() %}
+define GEO_REGION_{{ _name }} = {{ _code }};
+{% endfor %}
+{% for _name, _code in dn42_geo_country.items() %}
+define GEO_COUNTRY_{{ _name }} = {{ _code }};
+{% endfor %}
+
+define DN42_REGION               = {{ 'GEO_REGION_' ~ dn42.region if dn42.region is string else dn42.region }};
+define DN42_COUNTRY              = {{ 'GEO_COUNTRY_' ~ dn42.country if dn42.country is string else dn42.country }};
 
 {% endif %}{% if intra is not defined %}{% set intra = {} %}{% endif %}
 {% if modules.intra.enabled | default(false) %}

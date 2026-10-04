@@ -1,0 +1,38 @@
+---
+# DN42 route-origin geo communities, used as (64511, region) / (64511, country).
+# Region range 41-70; country range 1000-1999 = ISO-3166-1 numeric + 1000.
+# Full ISO table is ~200 rows; only the values our PoPs and peers actually use
+# are kept here, extend as needed.
+dn42_geo_region:
+  EUROPE: 41
+  NA_EAST: 42
+  NA_CENTRAL: 43
+  NA_WEST: 44
+  CENTRAL_AMERICA: 45
+  SA_EAST: 46
+  SA_WEST: 47
+  AFRICA_NORTH: 48
+  AFRICA_SOUTH: 49
+  ASIA_SOUTH: 50
+  ASIA_SOUTHEAST: 51
+  ASIA_EAST: 52
+  OCEANIA: 53
+  ANTARCTICA: 54
+  ASIA_NORTH: 55
+  ASIA_WEST: 56
+  ASIA_CENTRAL: 57
+dn42_geo_country:
+  CANADA: 1124
+  CHINA: 1156
+  TAIWAN: 1158
+  FRANCE: 1250
+  GERMANY: 1276
+  HONG_KONG: 1344
+  JAPAN: 1392
+  NETHERLANDS: 1528
+  NORWAY: 1578
+  RUSSIA: 1643
+  SINGAPORE: 1702
+  SWITZERLAND: 1756
+  UNITED_KINGDOM: 1826
+  UNITED_STATES: 1840

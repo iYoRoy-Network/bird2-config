@@ -4,6 +4,30 @@ bgp_community_aliases:
   BLACKHOLE: [65535, 666]
   NO_EXPORT: [65535, 65281]
   NO_ADVERTISE: [65535, 65282]
+# Community function codes from communities.csv, used as <ASN>:<fn>:<arg>
+# (large communities) and 64511:<geo> (geo route origin).
+bgp_community_fn:
+  IDENTIFY: 2
+  GEO_SRC: 644
+  GEO_DST: 645
+  DENY_REGION: 650
+  ONLY_REGION: 651
+  DENY_COUNTRY: 660
+  ONLY_COUNTRY: 661
+  DENY_AS: 670
+  ONLY_AS: 671
+  PREPEND_AS: { "1": 691, "2": 692, "3": 693 }
+  PREPEND_AS_OTHERS: { "1": 694, "2": 695, "3": 696 }
+  PREPEND_REGION: { "1": 697, "2": 698, "3": 699 }
+  PREPEND_REGION_OTHERS: { "1": 700, "2": 701, "3": 702 }
+  PREPEND_COUNTRY: { "1": 703, "2": 704, "3": 705 }
+  PREPEND_COUNTRY_OTHERS: { "1": 706, "2": 707, "3": 708 }
+  WELLKNOWN: 65535
+# <ASN>:<fn=IDENTIFY>:<origin>. (private/0 is retired and intentionally absent)
+bgp_community_origin:
+  CUSTOMER: 100
+  PEER: 101
+  UPSTREAM: 102
 # ── BIRD 常量注册表 ──────────────────────────────────────────────────────
 # macro: 控制面词汇表，保留 `define`（ASN 身份、地理码、联邦 AS 区间、router id）。
 # inline: 数据面取值，渲染后整词展开为字面量并删掉对应 define。
