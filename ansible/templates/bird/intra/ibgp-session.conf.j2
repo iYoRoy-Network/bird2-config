@@ -6,7 +6,7 @@
 {% set ipv6_export_policy = ipv6.export_policy | default(session.export_policy | default('default')) %}
 {% if session.neighbor.node is defined %}
 {% set neighbor_node = hostvars[session.neighbor.node].node %}
-{% set neighbor_address = '%s:%d:%d:%s' | format(intra_global.link_local_prefix, neighbor_node.tier, neighbor_node.region, neighbor_node.node_token) %}
+{% set neighbor_address = neighbor_node | intra_lla(intra_global) %}
 {% else %}
 {% set neighbor_address = session.neighbor.address %}
 {% endif %}
