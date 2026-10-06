@@ -169,14 +169,3 @@
       when:
         - iana.enabled | default(false)
         - (iana.peers | default([]) | length > 0) or (iana.downstreams | default([]) | length > 0)
-
-    - name: Flatten inlined BIRD defines
-      delegate_to: localhost
-      become: false
-      ansible.builtin.command:
-        argv:
-          - "{{ playbook_dir }}/../files/flatten_bird_defines.py"
-          - "{{ node_output_dir }}"
-      environment:
-        BIRD_DEFINE_INLINE: "{{ bird_define_inline | default([]) | join(' ') }}"
-      changed_when: true

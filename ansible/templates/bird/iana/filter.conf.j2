@@ -1,5 +1,5 @@
 function is_self_iana_v6() { 
-    return net ~ IANA_OWNNETSETv6;
+    return net ~ {{ iana_global.own_netset_v6 }};
 }
 
 function iana_filter_default_check(){

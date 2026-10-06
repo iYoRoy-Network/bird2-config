@@ -1,9 +1,9 @@
 function is_self_dn42_net() {
-    return net ~ DN42_OWNNETSET;
+    return net ~ {{ dn42_global.own_netset }};
 }
 
 function is_self_dn42_net_v6() {
-    return net ~ DN42_OWNNETSETv6;
+    return net ~ {{ dn42_global.own_netset_v6 }};
 }
 
 function is_valid_dn42_network() {

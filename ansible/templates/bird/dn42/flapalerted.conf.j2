@@ -1,7 +1,7 @@
 {% set _flap_server_v6 = hostvars['hkg01-hk'].node | intra_loopback_v6(intra_global) %}
 protocol bgp dn42_flapalerted {
-    router id INTRA_LOOPBACKv4;
-    local INTRA_LOOPBACKv6 as DN42_OWNAS;
+    router id {{ derived_intra_loopback_v4 }};
+    local {{ derived_intra_loopback_v6 }} as DN42_OWNAS;
     neighbor {{ _flap_server_v6 }} as DN42_OWNAS port {{ dn42.flapalerted.neighbor.port }};
 
     ipv4 {

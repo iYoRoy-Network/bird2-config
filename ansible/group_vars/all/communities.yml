@@ -20,26 +20,3 @@ bgp_community:
   WK_BLACKHOLE: 666
   WK_NO_EXPORT: 65281
   WK_NO_ADVERTISE: 65282
-# ── BIRD 常量注册表 ──────────────────────────────────────────────────────
-# macro: 控制面词汇表，保留 `define`（ASN 身份、地理码、联邦 AS 区间、router id）。
-# inline: 数据面取值，渲染后整词展开为字面量并删掉对应 define。
-# 保留为 define 的：IANA_OWNAS, IANA_ROUTER_ID, DN42_OWNAS, DN42_REGION,
-#   DN42_COUNTRY, INTRA_CONFEDERATION_START, INTRA_CONFEDERATION_END,
-#   INTRA_OWNAS, INTRA_ROUTERID
-bird_define_inline:
-  - IANA_OWNIPv6
-  - IANA_AnycastNETv6
-  - IANA_OWNNETv6
-  - IANA_OWNNETSETv6
-  - IANA_ALLOW_NETSETv6
-  - DN42_OWNNET
-  - DN42_OWNNETv6
-  - DN42_OWNNETSET
-  - DN42_OWNNETSETv6
-  - INTRA_PREFIX_V4
-  - INTRA_PREFIX_V6
-  - INTRA_LOOPBACKv4
-  - INTRA_LOOPBACKv4NET
-  - INTRA_LOOPBACKv6
-  - INTRA_LOOPBACKv6NET
-  - INTRA_LLA

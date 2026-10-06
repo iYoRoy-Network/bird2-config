@@ -15,7 +15,7 @@
 {% set iana_overlay_communities = intra_global.iana_overlay_route_communities %}
 {% set overlay_default_communities = dn42_overlay_communities %}
 protocol static intra_static_v4{
-{% if underlay_loopback_enabled %}    route INTRA_LOOPBACKv4NET reject{
+{% if underlay_loopback_enabled %}    route {{ derived_intra_loopback_v4 }}/32 reject{
 {{ render_communities(underlay_loopback_communities) }}    };
 {% endif %}{% if dn42 is defined and dn42.own_ip is defined %}    route {{ dn42.own_ip }}/32 reject{
 {{ render_communities(overlay_default_communities) }}    };
@@ -29,7 +29,7 @@ protocol static intra_static_v4{
 }
 
 protocol static intra_static_v6{
-{% if underlay_loopback_enabled %}    route INTRA_LOOPBACKv6NET reject{
+{% if underlay_loopback_enabled %}    route {{ derived_intra_loopback_v6 }}/128 reject{
 {{ render_communities(underlay_loopback_communities) }}    };
 {% endif %}{% if dn42 is defined and dn42.own_ipv6 is defined %}    route {{ dn42.own_ipv6 }}/128 reject{
 {{ render_communities(overlay_default_communities) }}    };
