@@ -2,23 +2,16 @@
   ansible.builtin.assert:
     quiet: true
     that:
-      - community is not string or bgp_community_aliases[community] is defined
+      - community is sequence and community is not string and community is not mapping
+      - community | length in [2, 3]
       - >-
-        community is string or (
-          community is sequence
-          and community is not mapping
-          and community | length in [2, 3]
-          and community | select('integer') | list | length == community | length
-          and community | min >= 0
-          and (
-            (community | length == 2 and community | max <= 65535)
-            or (community | length == 3 and community | max <= 4294967295)
-          )
-        )
+        community | map('string')
+        | map('regex_search', '^([0-9]+|[A-Z][A-Z0-9_]*)$')
+        | select('string') | list | length == community | length
     fail_msg: >-
       Invalid BGP community in {{ inventory_hostname }} {{ community_context }}:
-      {{ community | to_json }}. Use an alias from bgp_community_aliases or a
-      2/3-integer YAML list ([asn, value] or [global, local1, local2]).
+      {{ community | to_json }}. Use a 2/3-element YAML list of numbers or
+      COMM_* / ASN macro names ([asn, value] or [global, local1, local2]).
   loop: "{{ community_list | default([]) }}"
   loop_control:
     loop_var: community

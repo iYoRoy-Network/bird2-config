@@ -10,7 +10,7 @@ iana:
     advertise_routes:
     - prefix: "2a14:7583:f220::/43"
       communities:
-        - [205369, 670, 6939]
+        - [IANA_OWNAS, COMM_FN_DENY_AS, 6939]
     extra_routes:
     - protocol: iana_static
       prefixes: []

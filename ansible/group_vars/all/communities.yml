@@ -1,33 +1,25 @@
 ---
-# Community vocabulary and BIRD constant registry
-bgp_community_aliases:
-  BLACKHOLE: [65535, 666]
-  NO_EXPORT: [65535, 65281]
-  NO_ADVERTISE: [65535, 65282]
-# Community function codes from communities.csv, used as <ASN>:<fn>:<arg>
-# (large communities) and 64511:<geo> (geo route origin).
-bgp_community_fn:
-  IDENTIFY: 2
-  GEO_SRC: 644
-  GEO_DST: 645
-  DENY_REGION: 650
-  ONLY_REGION: 651
-  DENY_COUNTRY: 660
-  ONLY_COUNTRY: 661
-  DENY_AS: 670
-  ONLY_AS: 671
-  PREPEND_AS: { "1": 691, "2": 692, "3": 693 }
-  PREPEND_AS_OTHERS: { "1": 694, "2": 695, "3": 696 }
-  PREPEND_REGION: { "1": 697, "2": 698, "3": 699 }
-  PREPEND_REGION_OTHERS: { "1": 700, "2": 701, "3": 702 }
-  PREPEND_COUNTRY: { "1": 703, "2": 704, "3": 705 }
-  PREPEND_COUNTRY_OTHERS: { "1": 706, "2": 707, "3": 708 }
-  WELLKNOWN: 65535
-# <ASN>:<fn=IDENTIFY>:<origin>. (private/0 is retired and intentionally absent)
-bgp_community_origin:
-  CUSTOMER: 100
-  PEER: 101
-  UPSTREAM: 102
+# Community vocabulary: the single registry for community values, shared by
+# the bird filter templates (emitted as COMM_* defines in bird.conf) and the
+# host_vars / group_vars route community lists (which reference these names).
+#
+# Keys are prefixed by role:
+#   FN_*      function code — the middle field of <ASN>:<fn>:<arg>
+#   ORIGIN_*  origin value  — the arg of <ASN>:<FN_IDENTIFY>:<arg>
+#   WK_*      well-known value — the arg of <ASN>:<FN_WELLKNOWN>:<arg>
+# Function codes for the not-yet-implemented communities.csv features (geo
+# export control 644/645/650-661, prepend 691-708, ...) are added here when
+# those features land.
+bgp_community:
+  FN_IDENTIFY: 2
+  FN_DENY_AS: 670
+  FN_WELLKNOWN: 65535
+  ORIGIN_CUSTOMER: 100
+  ORIGIN_PEER: 101
+  ORIGIN_UPSTREAM: 102
+  WK_BLACKHOLE: 666
+  WK_NO_EXPORT: 65281
+  WK_NO_ADVERTISE: 65282
 # ── BIRD 常量注册表 ──────────────────────────────────────────────────────
 # macro: 控制面词汇表，保留 `define`（ASN 身份、地理码、联邦 AS 区间、router id）。
 # inline: 数据面取值，渲染后整词展开为字面量并删掉对应 define。

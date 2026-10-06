@@ -20,11 +20,11 @@ intra_global:
   link_local_prefix: fe80::2024
   confederation_as_format: '422024%d%d%02d'
   underlay_loopback_communities:
-    - [4242422024, 2, 100]
-    - [65535, 65281]
+    - [DN42_OWNAS, COMM_FN_IDENTIFY, COMM_ORIGIN_CUSTOMER]
+    - [COMM_FN_WELLKNOWN, COMM_WK_NO_EXPORT]
   dn42_overlay_route_communities:
-    - [4242422024, 2, 100]
-    - [65535, 65281]
+    - [DN42_OWNAS, COMM_FN_IDENTIFY, COMM_ORIGIN_CUSTOMER]
+    - [COMM_FN_WELLKNOWN, COMM_WK_NO_EXPORT]
   iana_overlay_route_communities:
-    - [205369, 2, 100]
-    - [65535, 65281]
+    - [IANA_OWNAS, COMM_FN_IDENTIFY, COMM_ORIGIN_CUSTOMER]
+    - [COMM_FN_WELLKNOWN, COMM_WK_NO_EXPORT]

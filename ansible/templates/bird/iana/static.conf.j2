@@ -1,17 +1,16 @@
-{% macro render_communities(community_list, community_aliases, indent='        ') -%}
+{% macro render_communities(community_list, indent='        ') -%}
 {% for community in community_list | default([]) -%}
-{% set resolved_community = (community_aliases[community] | mandatory) if community is string else community -%}
-{% if resolved_community | length == 2 -%}
-{{ indent }}bgp_community.add(({{ resolved_community | join(',') }}));
+{% if community | length == 2 -%}
+{{ indent }}bgp_community.add(({{ community | join(',') }}));
 {% else -%}
-{{ indent }}bgp_large_community.add(({{ resolved_community | join(',') }}));
+{{ indent }}bgp_large_community.add(({{ community | join(',') }}));
 {% endif -%}
 {% endfor -%}
 {% endmacro %}
 protocol static iana_static_advertise{
 {% for route in iana.static.advertise_routes %}{% if route is mapping %}
 {% set communities = route.communities | default([]) %}    route {{ route.prefix | mandatory }} reject{% if communities %} {
-{{ render_communities(communities, bgp_community_aliases) }}    }{% endif %};
+{{ render_communities(communities) }}    }{% endif %};
 {% else %}    route {{ route }} reject;
 {% endif %}{% endfor %}
     ipv6 {
@@ -29,14 +28,14 @@ protocol static {{ route_group.name | default(route_group.protocol) }}{
 {% set communities = route.communities | default([]) %}
 {% if route.via is defined %}
 {% if route.via.recursive is defined %}    route {{ route.prefix }} recursive {{ route.via.recursive }}{% if communities %} {
-{{ render_communities(communities, bgp_community_aliases) }}    }{% endif %};
+{{ render_communities(communities) }}    }{% endif %};
 {% elif route.via.address is defined %}    route {{ route.prefix }} via {{ route.via.address }}{% if route.via.interface is defined and route.via.interface %} % '{{ route.via.interface }}'{% endif %}{% if communities %} {
-{{ render_communities(communities, bgp_community_aliases) }}    }{% endif %};
+{{ render_communities(communities) }}    }{% endif %};
 {% else %}    route {{ route.prefix }} via "{{ route.via.interface }}"{% if communities %} {
-{{ render_communities(communities, bgp_community_aliases) }}    }{% endif %};
+{{ render_communities(communities) }}    }{% endif %};
 {% endif %}
 {% else %}    route {{ route.prefix }} reject{% if communities %} {
-{{ render_communities(communities, bgp_community_aliases) }}    }{% endif %};
+{{ render_communities(communities) }}    }{% endif %};
 {% endif %}
 {% endfor %}
     ipv6 {
@@ -58,7 +57,7 @@ protocol static {{ route_group.protocol }}{
 {% endif %}
     ipv6 {
         import filter{
-{{ render_communities(communities, bgp_community_aliases, '            ') }}            accept;
+{{ render_communities(communities, '            ') }}            accept;
         };
         export none;
     };

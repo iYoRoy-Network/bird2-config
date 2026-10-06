@@ -1,10 +1,9 @@
-{% macro render_communities(community_list, community_aliases, indent='        ') -%}
+{% macro render_communities(community_list, indent='        ') -%}
 {% for community in community_list | default([]) -%}
-{% set resolved_community = (community_aliases[community] | mandatory) if community is string else community -%}
-{% if resolved_community | length == 2 -%}
-{{ indent }}bgp_community.add(({{ resolved_community | join(',') }}));
+{% if community | length == 2 -%}
+{{ indent }}bgp_community.add(({{ community | join(',') }}));
 {% else -%}
-{{ indent }}bgp_large_community.add(({{ resolved_community | join(',') }}));
+{{ indent }}bgp_large_community.add(({{ community | join(',') }}));
 {% endif -%}
 {% endfor -%}
 {% endmacro %}
@@ -17,11 +16,11 @@
 {% set overlay_default_communities = dn42_overlay_communities %}
 protocol static intra_static_v4{
 {% if underlay_loopback_enabled %}    route INTRA_LOOPBACKv4NET reject{
-{{ render_communities(underlay_loopback_communities, bgp_community_aliases) }}    };
+{{ render_communities(underlay_loopback_communities) }}    };
 {% endif %}{% if dn42 is defined and dn42.own_ip is defined %}    route {{ dn42.own_ip }}/32 reject{
-{{ render_communities(overlay_default_communities, bgp_community_aliases) }}    };
+{{ render_communities(overlay_default_communities) }}    };
 {% endif %}{% for route in intra_static.v4_routes | default([], true) %}    route {{ route.prefix }} reject{
-{{ render_communities(route.communities | default(overlay_default_communities), bgp_community_aliases) }}    };
+{{ render_communities(route.communities | default(overlay_default_communities)) }}    };
 {% endfor %}
     ipv4 {
         import all;
@@ -31,14 +30,14 @@ protocol static intra_static_v4{
 
 protocol static intra_static_v6{
 {% if underlay_loopback_enabled %}    route INTRA_LOOPBACKv6NET reject{
-{{ render_communities(underlay_loopback_communities, bgp_community_aliases) }}    };
+{{ render_communities(underlay_loopback_communities) }}    };
 {% endif %}{% if dn42 is defined and dn42.own_ipv6 is defined %}    route {{ dn42.own_ipv6 }}/128 reject{
-{{ render_communities(overlay_default_communities, bgp_community_aliases) }}    };
+{{ render_communities(overlay_default_communities) }}    };
 {% endif %}{% if iana is defined and iana.enabled | default(false) %}
     route {{ iana.own_ipv6 | default(derived_public_ipv6) }}/128 reject{
-{{ render_communities(iana_overlay_communities, bgp_community_aliases) }}    };
+{{ render_communities(iana_overlay_communities) }}    };
 {% endif %}{% for route in intra_static.v6_routes | default([], true) %}    route {{ route.prefix }} reject{
-{{ render_communities(route.communities | default(overlay_default_communities), bgp_community_aliases) }}    };
+{{ render_communities(route.communities | default(overlay_default_communities)) }}    };
 {% endfor %}
     ipv6 {
         import all;
