@@ -6,7 +6,7 @@ log syslog all;
 {% for _name, _value in bgp_community.items() %}
 define COMM_{{ _name }} = {{ _value }};
 {% endfor %}
-define GEO_COMM_AS = {{ dn42_geo_comm_as }};
+define GEO_COMM_AS = {{ dn42_global.geo_comm_as }};
 {% if iana is defined and iana.enabled | default(false) %}
 define IANA_OWNAS                = {{ iana_global.own_as }};
 define IANA_ROUTER_ID            = {{ iana.router_id }};
@@ -14,10 +14,10 @@ define IANA_ROUTER_ID            = {{ iana.router_id }};
 {% endif %}{% if dn42 is defined %}
 define DN42_OWNAS                = {{ dn42_global.own_as }};
 
-{% for _name, _code in dn42_geo_region.items() %}
+{% for _name, _code in geo_region.items() %}
 define GEO_REGION_{{ _name }} = {{ _code }};
 {% endfor %}
-{% for _name, _code in dn42_geo_country.items() %}
+{% for _name, _code in geo_country.items() %}
 define GEO_COUNTRY_{{ _name }} = {{ _code }};
 {% endfor %}
 
