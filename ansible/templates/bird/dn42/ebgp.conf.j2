@@ -1,10 +1,10 @@
 function dn42_ebgp_add_community(){
-    bgp_large_community.add((DN42_OWNAS,2,101));
-    bgp_large_community.add((DN42_OWNAS,2,102));
+    bgp_large_community.add((DN42_OWNAS,COMM_FN_IDENTIFY,COMM_ORIGIN_PEER));
+    bgp_large_community.add((DN42_OWNAS,COMM_FN_IDENTIFY,COMM_ORIGIN_UPSTREAM));
 }
 
 function dn42_ebgp_check_community(){
-    if !(bgp_large_community ~ [(DN42_OWNAS,2,*)]) then return false;
+    if !(bgp_large_community ~ [(DN42_OWNAS,COMM_FN_IDENTIFY,*)]) then return false;
     if bgp_community ~ [(65535,65281)] then reject;
     if bgp_community ~ [(65535,65282)] then reject;
 
@@ -45,8 +45,8 @@ template bgp dnpeers {
                 if roa_check(dn42_roa_flap_v4, net, bgp_path.last) = ROA_INVALID then reject;
                 if !dn42_ebgp_check_community() then reject;
                 if is_self_dn42_net() then {
-                    bgp_community.add((64511, DN42_REGION));
-                    bgp_community.add((64511, DN42_COUNTRY));
+                    bgp_community.add((GEO_COMM_AS, DN42_REGION));
+                    bgp_community.add((GEO_COMM_AS, DN42_COUNTRY));
                 }
 
                 remove_confederation_as();
@@ -78,8 +78,8 @@ template bgp dnpeers {
                 if roa_check(dn42_roa_flap_v6, net, bgp_path.last) = ROA_INVALID then reject;
                 if !dn42_ebgp_check_community() then reject;
                 if is_self_dn42_net_v6() then {
-                    bgp_community.add((64511, DN42_REGION));
-                    bgp_community.add((64511, DN42_COUNTRY));
+                    bgp_community.add((GEO_COMM_AS, DN42_REGION));
+                    bgp_community.add((GEO_COMM_AS, DN42_COUNTRY));
                 }
                 remove_confederation_as();
                 remove_private_community();

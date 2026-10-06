@@ -6,11 +6,11 @@
 {% if export_policy not in ns.export_policies %}{% set ns.export_policies = ns.export_policies + [export_policy] %}{% endif %}
 {% endfor %}
 function iana_downstream_add_community(){
-    bgp_large_community.add((IANA_OWNAS,2,100));
+    bgp_large_community.add((IANA_OWNAS,COMM_FN_IDENTIFY,COMM_ORIGIN_CUSTOMER));
 }
 
 function iana_downstream_check_community(){
-    if !(bgp_large_community ~ [(IANA_OWNAS,2,*)]) then return false;
+    if !(bgp_large_community ~ [(IANA_OWNAS,COMM_FN_IDENTIFY,*)]) then return false;
     if bgp_community ~ [(65535,65281)] then reject;
     if bgp_community ~ [(65535,65282)] then reject;
     return true;

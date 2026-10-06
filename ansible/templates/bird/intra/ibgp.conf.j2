@@ -19,7 +19,7 @@ filter intra_ibgp_import_default {
     if bgp_community ~ [(65535,65282)] then reject;
 
     # require a known origin in an enabled domain
-{% for own_as in bird_own_as_defines %}    if bgp_large_community ~ [({{ own_as }},2,*)] then accept;
+{% for own_as in bird_own_as_defines %}    if bgp_large_community ~ [({{ own_as }},COMM_FN_IDENTIFY,*)] then accept;
 {% endfor %}
     # default: reject
     reject;
@@ -31,7 +31,7 @@ filter intra_ibgp_export_default {
     if bgp_community ~ [(65535,65282)] then reject;
 
     # require a known origin in an enabled domain
-{% for own_as in bird_own_as_defines %}    if bgp_large_community ~ [({{ own_as }},2,*)] then accept;
+{% for own_as in bird_own_as_defines %}    if bgp_large_community ~ [({{ own_as }},COMM_FN_IDENTIFY,*)] then accept;
 {% endfor %}
     # default: reject
     reject;
@@ -44,7 +44,7 @@ filter intra_ibgp_import_iana_full {
     if bgp_community ~ [(65535,65282)] then reject;
 
     # iana origin only
-    if bgp_large_community ~ [(IANA_OWNAS,2,*)] then accept;
+    if bgp_large_community ~ [(IANA_OWNAS,COMM_FN_IDENTIFY,*)] then accept;
 
     # default: reject
     reject;
@@ -56,7 +56,7 @@ filter intra_ibgp_export_iana_full {
     if bgp_community ~ [(65535,65282)] then reject;
 
     # iana origin only
-    if bgp_large_community ~ [(IANA_OWNAS,2,*)] then accept;
+    if bgp_large_community ~ [(IANA_OWNAS,COMM_FN_IDENTIFY,*)] then accept;
 
     # default: reject
     reject;
@@ -69,7 +69,7 @@ filter intra_ibgp_import_dn42_full {
     if bgp_community ~ [(65535,65282)] then reject;
 
     # dn42 origin only
-    if bgp_large_community ~ [(DN42_OWNAS,2,*)] then accept;
+    if bgp_large_community ~ [(DN42_OWNAS,COMM_FN_IDENTIFY,*)] then accept;
 
     # default: reject
     reject;
@@ -81,7 +81,7 @@ filter intra_ibgp_export_dn42_full {
     if bgp_community ~ [(65535,65282)] then reject;
 
     # dn42 origin only
-    if bgp_large_community ~ [(DN42_OWNAS,2,*)] then accept;
+    if bgp_large_community ~ [(DN42_OWNAS,COMM_FN_IDENTIFY,*)] then accept;
 
     # default: reject
     reject;
@@ -94,7 +94,7 @@ filter intra_ibgp_import_full {
     if bgp_community ~ [(65535,65282)] then reject;
 
     # require a known origin in an enabled domain
-{% for own_as in bird_own_as_defines %}    if bgp_large_community ~ [({{ own_as }},2,*)] then accept;
+{% for own_as in bird_own_as_defines %}    if bgp_large_community ~ [({{ own_as }},COMM_FN_IDENTIFY,*)] then accept;
 {% endfor %}
     # default: reject
     reject;
@@ -106,7 +106,7 @@ filter intra_ibgp_export_full {
     if bgp_community ~ [(65535,65282)] then reject;
 
     # require a known origin in an enabled domain
-{% for own_as in bird_own_as_defines %}    if bgp_large_community ~ [({{ own_as }},2,*)] then accept;
+{% for own_as in bird_own_as_defines %}    if bgp_large_community ~ [({{ own_as }},COMM_FN_IDENTIFY,*)] then accept;
 {% endfor %}
     # default: reject
     reject;
@@ -119,11 +119,11 @@ filter intra_ibgp_import_3377confed_iana {
     if bgp_community ~ [(65535,65282)] then reject;
 
 {% if iana_on %}    # control: allow from iana
-    if bgp_large_community ~ [(IANA_OWNAS,2,*)] then accept;
+    if bgp_large_community ~ [(IANA_OWNAS,COMM_FN_IDENTIFY,*)] then accept;
 
 {% endif %}    # allow from 3377 igp
     if bgp_large_community ~ [(4242423377, 0, 36)] then {
-{% if iana_on %}        bgp_large_community.add((IANA_OWNAS,2,100));
+{% if iana_on %}        bgp_large_community.add((IANA_OWNAS,COMM_FN_IDENTIFY,COMM_ORIGIN_CUSTOMER));
 {% endif %}        accept;
     }
 
@@ -137,11 +137,11 @@ filter intra_ibgp_export_3377confed_iana {
     if bgp_community ~ [(65535,65282)] then reject;
 
 {% if iana_on %}    # control: allow from iana
-    if bgp_large_community ~ [(IANA_OWNAS,2,*)] then accept;
+    if bgp_large_community ~ [(IANA_OWNAS,COMM_FN_IDENTIFY,*)] then accept;
 
 {% endif %}    # allow from 3377 igp
     if bgp_large_community ~ [(4242423377, 0, 36)] then {
-{% if iana_on %}        bgp_large_community.delete((IANA_OWNAS,2,100));
+{% if iana_on %}        bgp_large_community.delete((IANA_OWNAS,COMM_FN_IDENTIFY,COMM_ORIGIN_CUSTOMER));
 {% endif %}        accept;
     }
 

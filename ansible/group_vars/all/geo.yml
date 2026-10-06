@@ -3,6 +3,7 @@
 # Region range 41-70; country range 1000-1999 = ISO-3166-1 numeric + 1000.
 # Full ISO table is ~200 rows; only the values our PoPs and peers actually use
 # are kept here, extend as needed.
+dn42_geo_comm_as: 64511
 dn42_geo_region:
   EUROPE: 41
   NA_EAST: 42

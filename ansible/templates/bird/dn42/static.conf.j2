@@ -4,7 +4,7 @@ protocol static dn42_static_v4{
 
     ipv4 {
         import filter{
-            bgp_large_community.add((DN42_OWNAS,2,100));
+            bgp_large_community.add((DN42_OWNAS,COMM_FN_IDENTIFY,COMM_ORIGIN_CUSTOMER));
             accept;
         };
         export none;
@@ -18,7 +18,7 @@ protocol static dn42_static_v6{
 
     ipv6 {
         import filter{
-            bgp_large_community.add((DN42_OWNAS,2,100));
+            bgp_large_community.add((DN42_OWNAS,COMM_FN_IDENTIFY,COMM_ORIGIN_CUSTOMER));
             accept;
         };
         export none;

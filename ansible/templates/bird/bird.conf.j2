@@ -2,6 +2,12 @@
 log syslog all;
 
 {% endif %}
+# community vocabulary (see group_vars/all/communities.yml)
+define COMM_FN_IDENTIFY      = {{ bgp_community_fn.IDENTIFY }};
+define COMM_ORIGIN_CUSTOMER  = {{ bgp_community_origin.CUSTOMER }};
+define COMM_ORIGIN_PEER      = {{ bgp_community_origin.PEER }};
+define COMM_ORIGIN_UPSTREAM  = {{ bgp_community_origin.UPSTREAM }};
+define GEO_COMM_AS           = {{ dn42_geo_comm_as }};
 {% if iana is defined and iana.enabled | default(false) %}
 define IANA_OWNAS                = {{ iana_global.own_as }};
 define IANA_OWNIPv6              = {{ iana.own_ipv6 | default(derived_public_ipv6) }};
