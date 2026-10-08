@@ -62,7 +62,11 @@ protocol bgp '{{ peer.protocol }}' from iana_peer{
 {% endif %}
             iana_peer_import_default();
         };
-        export where iana_peer_export_default();
+        export filter {
+            if !iana_peer_export_default() then reject;
+            if !iana_apply_export({{ peer.neighbor.asn }}) then reject;
+            accept;
+        };
     };
 }
 {% endfor %}

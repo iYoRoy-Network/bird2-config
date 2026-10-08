@@ -31,27 +31,27 @@ function iana_downstream_import_reject() {
 }
 {% endif %}
 {% if 'default' in ns.export_policies %}
-filter iana_downstream_export_default {
-    if !iana_filter_default_check() then reject;
-    if !iana_downstream_check_community() then reject;
+function iana_downstream_export_default() -> bool {
+    if !iana_filter_default_check() then return false;
+    if !iana_downstream_check_community() then return false;
     remove_confederation_as();
     remove_private_community();
-    accept;
+    return true;
 }
 {% endif %}
 {% if 'own_only' in ns.export_policies %}
-filter iana_downstream_export_own_only {
-    if !iana_filter_default_check() then reject;
-    if !iana_downstream_check_community() then reject;
-    if !is_self_iana_v6() then reject;
+function iana_downstream_export_own_only() -> bool {
+    if !iana_filter_default_check() then return false;
+    if !iana_downstream_check_community() then return false;
+    if !is_self_iana_v6() then return false;
     remove_confederation_as();
     remove_private_community();
-    accept;
+    return true;
 }
 {% endif %}
 {% if 'reject' in ns.export_policies %}
-filter iana_downstream_export_reject {
-    reject;
+function iana_downstream_export_reject() -> bool {
+    return false;
 }
 {% endif %}
 template bgp iana_downstream {
@@ -97,7 +97,11 @@ protocol bgp '{{ downstream.protocol }}' from iana_downstream{
 {% endif %}
             iana_downstream_import_{{ import_policy }}();
         };
-        export filter iana_downstream_export_{{ export_policy }};
+        export filter {
+            if !iana_downstream_export_{{ export_policy }}() then reject;
+            if !iana_apply_export({{ downstream.neighbor.asn }}) then reject;
+            accept;
+        };
     };
 }
 {% endfor %}
