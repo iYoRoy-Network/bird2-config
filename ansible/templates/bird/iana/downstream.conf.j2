@@ -20,7 +20,7 @@ function iana_downstream_import_default() {
     if !iana_filter_default_check() then reject;
     if is_self_iana_v6() then reject;
     remove_confederation_as();
-    remove_private_community();
+    remove_identity_community();
     iana_downstream_add_community();
     accept;
 }

@@ -33,7 +33,7 @@ template bgp dnpeers {
                 }
                 bgp_local_pref = dn42_ebgp_calculate_priority(); 
                 remove_confederation_as();
-                remove_private_community();
+                remove_identity_community();
                 dn42_ebgp_add_community();
                 accept;
             }
@@ -67,7 +67,7 @@ template bgp dnpeers {
                 }
                 bgp_local_pref = dn42_ebgp_calculate_priority(); 
                 remove_confederation_as();
-                remove_private_community();
+                remove_identity_community();
                 dn42_ebgp_add_community();
                 accept;
             }

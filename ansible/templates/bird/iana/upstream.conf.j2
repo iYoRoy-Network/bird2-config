@@ -23,7 +23,7 @@ template bgp iana_upstream_v4 {
         import filter {
             if !iana_filter_default_check() then reject;
             remove_confederation_as();
-            remove_private_community();
+            remove_identity_community();
             iana_upstream_add_community();
             accept;
         };
@@ -50,7 +50,7 @@ template bgp iana_upstream_v6 {
         import filter {
             if !iana_filter_default_check() then reject;
             remove_confederation_as();
-            remove_private_community();
+            remove_identity_community();
             iana_upstream_add_community();
             accept;
         };
@@ -79,7 +79,7 @@ protocol bgp '{{ upstream.protocol }}' from iana_upstream_v4{
         import filter {
             if !iana_filter_default_check() then reject;
             remove_confederation_as();
-            remove_private_community();
+            remove_identity_community();
             iana_upstream_add_community();
 {% for rewrite in upstream.next_hop_rewrites %}            if bgp_next_hop = {{ rewrite.from }} then {
                 bgp_next_hop = {{ rewrite.to }};
@@ -102,7 +102,7 @@ protocol bgp '{{ upstream.protocol }}' from iana_upstream_v6{
         import filter {
             if !iana_filter_default_check() then reject;
             remove_confederation_as();
-            remove_private_community();
+            remove_identity_community();
             iana_upstream_add_community();
 {% for rewrite in upstream.next_hop_rewrites %}            if bgp_next_hop = {{ rewrite.from }} then {
                 bgp_next_hop = {{ rewrite.to }};

@@ -15,7 +15,7 @@ function iana_peer_check_community(){
 function iana_peer_import_default() {
     if !iana_filter_default_check() then reject;
     remove_confederation_as();
-    remove_private_community();
+    remove_identity_community();
     iana_peer_add_community();
     accept;
 }

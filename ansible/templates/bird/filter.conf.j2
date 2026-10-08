@@ -7,6 +7,13 @@ function remove_private_community(){
 {% for own_as in bird_own_as_defines %}    bgp_large_community.delete([({{ own_as }}, *, *)]);
 {% endfor %}}
 
+# Strip only the internal identity marker (ASN, FN_IDENTIFY, *) so that
+# control communities injected by peers/customers survive for our own
+# export logic to act on.
+function remove_identity_community(){
+{% for own_as in bird_own_as_defines %}    bgp_large_community.delete([({{ own_as }}, COMM_FN_IDENTIFY, *)]);
+{% endfor %}}
+
 function get_unique_as_path_len() -> int
 int last;
 int cnt;

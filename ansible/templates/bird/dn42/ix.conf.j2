@@ -24,7 +24,7 @@ template bgp dn42_ixpeers {
             if is_valid_dn42_network() && !is_self_dn42_net() then {
                 bgp_local_pref = dn42_ebgp_calculate_priority(); 
                 remove_confederation_as();
-                remove_private_community();
+                remove_identity_community();
                 dn42_ix_add_community();
                 accept;
             }
@@ -54,7 +54,7 @@ template bgp dn42_ixpeers {
             if is_valid_dn42_network_v6() && !is_self_dn42_net_v6() then {
                 bgp_local_pref = dn42_ebgp_calculate_priority(); 
                 remove_confederation_as();
-                remove_private_community();
+                remove_identity_community();
                 dn42_ix_add_community();
                 accept;
             }
