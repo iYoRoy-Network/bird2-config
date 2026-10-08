@@ -1,10 +1,10 @@
 ---
 # Geo code registry, shared by every domain's route-origin communities:
-# DN42 uses (64511, region) / (64511, country); the public/IANA side uses the
-# same code table as (205369, 644|645, code).
-# Region range 41-70; country range 1000-1999 = ISO-3166-1 numeric + 1000.
-# Full ISO table is ~200 rows; only the values our PoPs and peers actually use
-# are kept here, extend as needed.
+#   region  = DN42 region code (41-70), used as DN42 (64511, region) and
+#             public (205369, 644|645, region).
+#   country = raw ISO-3166-1 numeric, used as public (205369, 644|645, country)
+#             and, on the DN42 side, as (64511, 1000 + country).
+# Only the values our PoPs and peers actually use are kept; extend as needed.
 geo_region:
   EUROPE: 41
   NA_EAST: 42
@@ -24,17 +24,17 @@ geo_region:
   ASIA_WEST: 56
   ASIA_CENTRAL: 57
 geo_country:
-  CANADA: 1124
-  CHINA: 1156
-  TAIWAN: 1158
-  FRANCE: 1250
-  GERMANY: 1276
-  HONG_KONG: 1344
-  JAPAN: 1392
-  NETHERLANDS: 1528
-  NORWAY: 1578
-  RUSSIA: 1643
-  SINGAPORE: 1702
-  SWITZERLAND: 1756
-  UNITED_KINGDOM: 1826
-  UNITED_STATES: 1840
+  CANADA: 124
+  CHINA: 156
+  TAIWAN: 158
+  FRANCE: 250
+  GERMANY: 276
+  HONG_KONG: 344
+  JAPAN: 392
+  NETHERLANDS: 528
+  NORWAY: 578
+  RUSSIA: 643
+  SINGAPORE: 702
+  SWITZERLAND: 756
+  UNITED_KINGDOM: 826
+  UNITED_STATES: 840

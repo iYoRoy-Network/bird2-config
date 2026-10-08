@@ -22,7 +22,7 @@ define GEO_COUNTRY_{{ _name }} = {{ _code }};
 {% endfor %}
 
 define DN42_REGION               = {{ 'GEO_REGION_' ~ dn42.region if dn42.region is string else dn42.region }};
-define DN42_COUNTRY              = {{ 'GEO_COUNTRY_' ~ dn42.country if dn42.country is string else dn42.country }};
+define DN42_COUNTRY              = {{ '1000 + GEO_COUNTRY_' ~ dn42.country if dn42.country is string else dn42.country }};
 
 {% endif %}{% if intra is not defined %}{% set intra = {} %}{% endif %}
 {% if modules.intra.enabled | default(false) %}
