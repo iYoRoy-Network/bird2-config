@@ -9,12 +9,19 @@ protocol bgp 'dn42_peer_{{ peer.asn }}{% if session.name != 'mp-bgp' %}_{{ sessi
     source address {{ session.source }};
 {% endif %}{% if session.extended_next_hop | default(false) %}    ipv4 {
         extended next hop;
+        export filter { if !dn42_ebgp_export_v4({{ peer.asn }}) then reject; accept; };
     };
 {% elif 'ipv4' not in session.address_families %}    ipv4 {
         import none;
         export none;
     };
-{% endif %}{% if 'ipv6' not in session.address_families %}    ipv6 {
+{% else %}    ipv4 {
+        export filter { if !dn42_ebgp_export_v4({{ peer.asn }}) then reject; accept; };
+    };
+{% endif %}{% if 'ipv6' in session.address_families %}    ipv6 {
+        export filter { if !dn42_ebgp_export_v6({{ peer.asn }}) then reject; accept; };
+    };
+{% else %}    ipv6 {
         import none;
         export none;
     };
@@ -36,10 +43,17 @@ protocol bgp 'dn42_peer_{{ peer.asn }}' from dnpeers {
 {% endif %}    neighbor {{ peer_lla }}{% if peer_interface %} % '{{ peer_interface }}'{% endif %} as {{ peer.asn }}{% if peer.neighbor.port is defined %} port {{ peer.neighbor.port }}{% endif %};
 {% endif %}{% if peer_extended_next_hop %}    ipv4 {
         extended next hop;
+        export filter { if !dn42_ebgp_export_v4({{ peer.asn }}) then reject; accept; };
     };
 {% elif peer_dst_mode and peer_dst_is_ipv6 %}    ipv4 {
         import none;
         export none;
+    };
+{% else %}    ipv4 {
+        export filter { if !dn42_ebgp_export_v4({{ peer.asn }}) then reject; accept; };
+    };
+{% endif %}{% if peer_extended_next_hop or (peer_dst_mode and peer_dst_is_ipv6) %}    ipv6 {
+        export filter { if !dn42_ebgp_export_v6({{ peer.asn }}) then reject; accept; };
     };
 {% else %}    ipv6 {
         import none;

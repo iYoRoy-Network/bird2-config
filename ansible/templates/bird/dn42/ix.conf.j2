@@ -13,6 +13,34 @@ function dn42_ix_check_community(){
     return true;
 }
 
+function dn42_ix_export_v4(int peer_as) -> bool {
+    if !(is_valid_dn42_network() && source ~ [RTS_STATIC, RTS_BGP]) then return false;
+    if roa_check(dn42_roa_flap_v4, net, bgp_path.last) = ROA_INVALID then return false;
+    if !dn42_ix_check_community() then return false;
+    if is_self_dn42_net() then {
+        bgp_community.add((GEO_COMM_AS, DN42_REGION));
+        bgp_community.add((GEO_COMM_AS, DN42_COUNTRY));
+    }
+    if !dn42_apply_export(peer_as) then return false;
+    remove_confederation_as();
+    remove_private_community();
+    return true;
+}
+
+function dn42_ix_export_v6(int peer_as) -> bool {
+    if !(is_valid_dn42_network_v6() && source ~ [RTS_STATIC, RTS_BGP]) then return false;
+    if roa_check(dn42_roa_flap_v6, net, bgp_path.last) = ROA_INVALID then return false;
+    if !dn42_ix_check_community() then return false;
+    if is_self_dn42_net_v6() then {
+        bgp_community.add((GEO_COMM_AS, DN42_REGION));
+        bgp_community.add((GEO_COMM_AS, DN42_COUNTRY));
+    }
+    if !dn42_apply_export(peer_as) then return false;
+    remove_confederation_as();
+    remove_private_community();
+    return true;
+}
+
 template bgp dn42_ixpeers {
     router id {{ derived_intra_loopback_v4 }};
     local as DN42_OWNAS;
@@ -32,19 +60,8 @@ template bgp dn42_ixpeers {
         };
 
         export filter {
-            if is_valid_dn42_network() && source ~ [RTS_STATIC, RTS_BGP] then{ 
-                if roa_check(dn42_roa_flap_v4, net, bgp_path.last) = ROA_INVALID then reject;
-                if !dn42_ix_check_community() then reject;
-                if is_self_dn42_net() then {
-                    bgp_community.add((GEO_COMM_AS, DN42_REGION));
-                    bgp_community.add((GEO_COMM_AS, DN42_COUNTRY));
-                }
-
-                remove_confederation_as();
-                remove_private_community();
-                accept;
-            }
-            reject;
+            if !dn42_ix_export_v4(0) then reject;
+            accept;
         };
     };
 
@@ -61,18 +78,8 @@ template bgp dn42_ixpeers {
             reject;
         };
         export filter {
-            if is_valid_dn42_network_v6() && source ~ [RTS_STATIC, RTS_BGP] then{
-                if roa_check(dn42_roa_flap_v6, net, bgp_path.last) = ROA_INVALID then reject;
-                if !dn42_ix_check_community() then reject;
-                if is_self_dn42_net_v6() then {
-                    bgp_community.add((GEO_COMM_AS, DN42_REGION));
-                    bgp_community.add((GEO_COMM_AS, DN42_COUNTRY));
-                }
-                remove_confederation_as();
-                remove_private_community();
-                accept;
-            }
-            reject;
+            if !dn42_ix_export_v6(0) then reject;
+            accept;
         };
     };
 }
@@ -82,6 +89,13 @@ protocol bgp '{{ session.protocol }}' from dn42_ixpeers {
 {% endif %}    neighbor {{ session.neighbor.address }}{% if session.neighbor.interface is defined and session.neighbor.interface %} % '{{ session.neighbor.interface }}'{% endif %} as {{ session.neighbor.asn }};
 {% if session.ipv4.extended_next_hop | default(false) %}    ipv4{
         extended next hop;
+        export filter { if !dn42_ix_export_v4({{ session.neighbor.asn }}) then reject; accept; };
     };
-{% endif %}};
+{% else %}    ipv4{
+        export filter { if !dn42_ix_export_v4({{ session.neighbor.asn }}) then reject; accept; };
+    };
+{% endif %}    ipv6{
+        export filter { if !dn42_ix_export_v6({{ session.neighbor.asn }}) then reject; accept; };
+    };
+};
 {% endfor %}
