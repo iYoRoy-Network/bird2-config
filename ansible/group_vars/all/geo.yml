@@ -1,9 +1,10 @@
 ---
-# Geo code registry, shared by every domain's route-origin communities:
-#   region  = DN42 region code (41-70), used as DN42 (64511, region) and
-#             public (205369, 644|645, region).
-#   country = raw ISO-3166-1 numeric, used as public (205369, 644|645, country)
-#             and, on the DN42 side, as (64511, 1000 + country).
+# Geo code registry, shared by every domain's route-origin communities.
+# Both are the value used in the *community* third field:
+#   region  = DN42 region code, 41-70.   (64511, region) / (205369, 644|645, region)
+#   country = ISO-3166-1 numeric + 1000. (64511, country) / (205369, 644|645, country)
+# The +1000 keeps country clear of the region range, since 644/645 carry both in
+# the same field (raw ISO numerics 4-894 would otherwise collide with 41-70).
 # Only the values our PoPs and peers actually use are kept; extend as needed.
 geo_region:
   EUROPE: 41
@@ -24,17 +25,17 @@ geo_region:
   ASIA_WEST: 56
   ASIA_CENTRAL: 57
 geo_country:
-  CANADA: 124
-  CHINA: 156
-  TAIWAN: 158
-  FRANCE: 250
-  GERMANY: 276
-  HONG_KONG: 344
-  JAPAN: 392
-  NETHERLANDS: 528
-  NORWAY: 578
-  RUSSIA: 643
-  SINGAPORE: 702
-  SWITZERLAND: 756
-  UNITED_KINGDOM: 826
-  UNITED_STATES: 840
+  CANADA: 1124
+  CHINA: 1156
+  TAIWAN: 1158
+  FRANCE: 1250
+  GERMANY: 1276
+  HONG_KONG: 1344
+  JAPAN: 1392
+  NETHERLANDS: 1528
+  NORWAY: 1578
+  RUSSIA: 1643
+  SINGAPORE: 1702
+  SWITZERLAND: 1756
+  UNITED_KINGDOM: 1826
+  UNITED_STATES: 1840
