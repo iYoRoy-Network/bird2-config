@@ -7,7 +7,7 @@
   vars_files:
     - "{{ wireguard_deploy.secrets_file }}"
   vars:
-    wg_output_dir: "{{ wireguard_deploy.render_root }}/{{ inventory_hostname }}"
+    wg_output_dir: "{{ wireguard_render_stage.path }}"
   tasks:
     - name: Skip hosts with WireGuard deploy disabled
       ansible.builtin.meta: end_host
@@ -29,44 +29,89 @@
           - effective_wireguard_interfaces | length > 0
         fail_msg: "No effective_wireguard_interfaces for {{ inventory_hostname }} before rendering WireGuard configs."
 
-    - name: Reset rendered WireGuard node directory
+    - name: Ensure WireGuard render parent exists
       delegate_to: localhost
       ansible.builtin.file:
-        path: "{{ wg_output_dir }}"
-        state: absent
-
-    - name: Create rendered WireGuard node directory
-      delegate_to: localhost
-      ansible.builtin.file:
-        path: "{{ wg_output_dir }}"
+        path: "{{ wireguard_deploy.render_root }}"
         state: directory
-        mode: "0700"
+        mode: '0700'
 
-    - name: Collect required WireGuard secret references
-      ansible.builtin.set_fact:
-        required_wireguard_private_key_refs: "{{ effective_wireguard_interfaces | map(attribute='private_key_ref', default=wireguard.default_private_key_ref) | list | unique }}"
-        required_wireguard_preshared_key_refs: "{{ effective_wireguard_interfaces | selectattr('peer.preshared_key_ref', 'defined') | map(attribute='peer.preshared_key_ref') | list | unique }}"
-      no_log: true
-
-    - name: Require WireGuard secrets for interfaces
-      ansible.builtin.assert:
-        quiet: true
-        that:
-          - required_wireguard_private_key_refs | difference(wireguard_secrets.private_keys.keys() | list) | length == 0
-          - required_wireguard_preshared_key_refs | difference(wireguard_secrets.preshared_keys.keys() | default([]) | list) | length == 0
-        fail_msg: >-
-          Missing WireGuard secret refs for {{ inventory_hostname }}:
-          private_keys={{ required_wireguard_private_key_refs | difference(wireguard_secrets.private_keys.keys() | list) }},
-          preshared_keys={{ required_wireguard_preshared_key_refs | difference(wireguard_secrets.preshared_keys.keys() | default([]) | list) }}
-
-    - name: Render WireGuard interface configs
+    - name: Allocate isolated WireGuard render directory
       delegate_to: localhost
-      ansible.builtin.template:
-        src: ../templates/wireguard/wg-quick.conf.j2
-        dest: "{{ wg_output_dir }}/{{ wg_interface.name }}.conf"
-        mode: "0600"
-      diff: false
-      loop: "{{ effective_wireguard_interfaces }}"
-      loop_control:
-        loop_var: wg_interface
-        label: "{{ wg_interface.name }}"
+      ansible.builtin.tempfile:
+        state: directory
+        path: "{{ wireguard_deploy.render_root }}"
+        prefix: ".{{ inventory_hostname }}-"
+      register: wireguard_render_stage
+
+    - name: Build and publish validated WireGuard artifact
+      block:
+        - name: Create rendered WireGuard node directory
+          delegate_to: localhost
+          ansible.builtin.file:
+            path: "{{ wg_output_dir }}"
+            state: directory
+            mode: "0700"
+
+        - name: Collect required WireGuard secret references
+          ansible.builtin.set_fact:
+            required_wireguard_private_key_refs: "{{ effective_wireguard_interfaces | map(attribute='private_key_ref', default=wireguard.default_private_key_ref) | list | unique }}"
+            required_wireguard_preshared_key_refs: "{{ effective_wireguard_interfaces | selectattr('peer.preshared_key_ref', 'defined') | map(attribute='peer.preshared_key_ref') | list | unique }}"
+          no_log: true
+
+        - name: Require WireGuard secrets for interfaces
+          ansible.builtin.assert:
+            quiet: true
+            that:
+              - required_wireguard_private_key_refs | difference(wireguard_secrets.private_keys.keys() | list) | length == 0
+              - required_wireguard_preshared_key_refs | difference(wireguard_secrets.preshared_keys.keys() | default([]) | list) | length == 0
+            fail_msg: >-
+              Missing WireGuard secret refs for {{ inventory_hostname }}:
+              private_keys={{ required_wireguard_private_key_refs | difference(wireguard_secrets.private_keys.keys() | list) }},
+              preshared_keys={{ required_wireguard_preshared_key_refs | difference(wireguard_secrets.preshared_keys.keys() | default([]) | list) }}
+
+        - name: Render WireGuard interface configs
+          delegate_to: localhost
+          ansible.builtin.template:
+            src: ../templates/wireguard/wg-quick.conf.j2
+            dest: "{{ wg_output_dir }}/{{ wg_interface.name }}.conf"
+            mode: "0600"
+          diff: false
+          loop: "{{ effective_wireguard_interfaces }}"
+          loop_control:
+            loop_var: wg_interface
+            label: "{{ wg_interface.name }}"
+
+        - name: Validate staged WireGuard syntax
+          delegate_to: localhost
+          ansible.builtin.command: "wg-quick strip ./{{ wg_interface.name }}.conf"
+          args:
+            chdir: "{{ wg_output_dir }}"
+          changed_when: false
+          no_log: true
+          loop: "{{ effective_wireguard_interfaces }}"
+          loop_control:
+            loop_var: wg_interface
+
+        - name: Seal and publish complete WireGuard artifact
+          delegate_to: localhost
+          ansible.builtin.command:
+            argv:
+              - python3
+              - "{{ playbook_dir }}/../files/artifact.py"
+              - "{{ wg_output_dir }}"
+              - --seal
+              - --node
+              - "{{ inventory_hostname }}"
+              - --kind
+              - wireguard
+              - --source-root
+              - "{{ inventory_dir }}/.."
+              - --publish
+              - "{{ wireguard_deploy.render_root }}/{{ inventory_hostname }}"
+      always:
+        - name: Remove temporary WireGuard render directory
+          delegate_to: localhost
+          ansible.builtin.file:
+            path: "{{ wireguard_render_stage.path }}"
+            state: absent

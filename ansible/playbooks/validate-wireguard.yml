@@ -16,6 +16,12 @@
     - name: Load DN42 peer definitions
       ansible.builtin.include_tasks: ../tasks/load-dn42-peers.yml
 
+    - name: Verify WireGuard artifact
+      ansible.builtin.include_tasks: ../tasks/verify-artifact.yml
+      vars:
+        artifact_dir: "{{ wg_output_dir }}"
+        artifact_kind: wireguard
+
     - name: Materialize domain intent variables
       ansible.builtin.include_tasks: ../tasks/materialize-domain-intent.yml
 
@@ -62,19 +68,6 @@
         loop_var: rendered_wg_config
         label: "{{ rendered_wg_config.wg_interface.name }}"
 
-    - name: Check whether wg-quick is installed
-      delegate_to: localhost
-      ansible.builtin.command: bash -lc 'command -v wg-quick'
-      register: wg_quick_binary
-      changed_when: false
-      failed_when: false
-
-    - name: Skip wg-quick strip when wg-quick is missing
-      delegate_to: localhost
-      ansible.builtin.debug:
-        msg: "wg-quick is not installed locally; skipping {{ inventory_hostname }} strip validation"
-      when: wg_quick_binary.rc != 0
-
     - name: Run wg-quick strip validation
       delegate_to: localhost
       ansible.builtin.command: "wg-quick strip ./{{ wg_interface.name }}.conf"
@@ -86,4 +79,3 @@
       loop_control:
         loop_var: wg_interface
         label: "{{ wg_interface.name }}"
-      when: wg_quick_binary.rc == 0

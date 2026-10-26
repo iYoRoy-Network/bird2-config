@@ -1,0 +1,40 @@
+---
+- name: Update reviewable IRR snapshots explicitly
+  hosts: bird_nodes
+  gather_facts: false
+  become: false
+  tasks:
+    - name: Allocate query file
+      delegate_to: localhost
+      ansible.builtin.tempfile:
+        state: file
+        prefix: bird-irr-
+      register: irr_query_file
+      when: iana.enabled | default(false)
+
+    - name: Resolve node IRR input
+      when: iana.enabled | default(false)
+      block:
+        - name: Write query data
+          delegate_to: localhost
+          ansible.builtin.copy:
+            content: "{{ iana | irr_queries | to_nice_json }}"
+            dest: "{{ irr_query_file.path }}"
+            mode: '0600'
+
+        - name: Resolve AS-SETs into snapshot
+          delegate_to: localhost
+          ansible.builtin.command:
+            argv:
+              - python3
+              - "{{ playbook_dir }}/../files/irr_snapshot.py"
+              - --queries
+              - "{{ irr_query_file.path }}"
+              - --output
+              - "{{ inventory_dir }}/irr/{{ inventory_hostname }}.json"
+      always:
+        - name: Remove query data
+          delegate_to: localhost
+          ansible.builtin.file:
+            path: "{{ irr_query_file.path }}"
+            state: absent

@@ -1,0 +1,36 @@
+name: Configuration Checks
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  offline:
+    runs-on: ubuntu-24.04
+    env:
+      ANSIBLE_STDOUT_CALLBACK: default
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install validation tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bird2 wireguard-tools
+          python -m pip install -r ansible/requirements-dev.txt
+      - name: Run rendering and runtime regression tests
+        run: python -m unittest discover -s ansible/tests -v
+      - name: Render all operational BIRD nodes from fixed snapshots
+        run: >-
+          ansible-playbook -i ansible/inventory.yml ansible/playbooks/render.yml
+          --limit '!cdg01-fr'
+          -e '{"bird_secrets":{"bgp_passwords":{"fra01_iana_upstream_64515":"ci-placeholder"}}}'
+      - name: Verify and parse published BIRD artifacts
+        run: >-
+          ansible-playbook -i ansible/inventory.yml ansible/playbooks/validate.yml
+          --limit '!cdg01-fr'
+          -e '{"bird_secrets":{"bgp_passwords":{"fra01_iana_upstream_64515":"ci-placeholder"}}}'

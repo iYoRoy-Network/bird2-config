@@ -7,6 +7,9 @@ BIRD validates before reloading; failure restores and reloads the previous tree.
 WireGuard stops changed interfaces using the old hooks, installs the new file,
 and starts with the new addresses/MTU/hooks. Service failures trigger file and
 service recovery. This can briefly interrupt a changed tunnel.
+Recovery tracks active and enabled states separately. Scoped recovery restores
+only the named configuration and its previous manifest. Helpers serialize
+application with a lock, and each invocation uploads to an isolated directory.
 
 These are per-component transactions, not one distributed transaction across
 WireGuard and BIRD. A successful tunnel update remains applied if a subsequent
@@ -16,6 +19,11 @@ if the host or service becomes unavailable; recovery results must be checked.
 Single-peer deployment modifies only its named peer, never other peer files.
 It requires the current shared BIRD functions to have been deployed separately.
 Production deployment is never part of the local verification workflow.
+Full deployment verifies the node identity and content manifest both before
+upload and again on the remote host. `--check` stops before remote mutations.
+Failed deployments retain their staging directory and backups for inspection;
+successful full deployments retain backups under the configured backup parent.
+Successful scoped deployments remove their temporary backups.
 
 ## Configuration Ownership
 
@@ -44,3 +52,59 @@ peers. It remains supported and is validated alongside generated interfaces.
 Duplicate names, ports, protocols, session files, missing reciprocal intra
 links, and invalid policy names fail before rendering. Retired CDG/LHR host
 definitions are left untouched; active peers use explicit CDG endpoints.
+
+## Reproducible Rendering
+
+IRR results are public, reviewable inputs in `ansible/irr/<node>.json`. Ordinary
+rendering does not query IRR. Refresh explicitly when AS-SET intent or membership
+changes, inspect the snapshot diff, and commit the desired results:
+
+```sh
+ansible-playbook -i ansible/inventory.yml ansible/playbooks/update-irr.yml --limit '!cdg01-fr'
+```
+
+This is the only step requiring `bgpq4` and IRR network access. A snapshot whose
+query mapping differs from current peer intent fails rendering. Membership
+freshness is an operational choice; snapshots do not expire automatically.
+
+Both renderers build in a temporary directory, validate there, and only then
+publish. A failed build preserves the previous published artifact and cleans up
+the temporary files. Publishing uses locked directory renames with recovery;
+the two renames are not a zero-gap atomic exchange. Do not run render and
+deployment concurrently: a racing upload will fail its remote manifest check
+if it captures inconsistent contents.
+
+Each `manifest.json` records node, component, source Git revision, source digest,
+dirty state, and file digests. Source digests cover tracked and untracked Ansible
+sources, excluding Git-ignored local secrets. Output file digests cover actual
+rendered secrets without recording their plaintext in the manifest. A manifest
+detects stale or accidentally edited contents; it is not a cryptographic
+signature. Scoped updates invalidate the old full-tree live manifest.
+
+## Local Checks
+
+Use Python 3.10+ and `pip install -r ansible/requirements-dev.txt`. `bird` and
+`birdc` are required for BIRD verification, and `wg-quick` for WireGuard syntax
+checks. Missing binaries now fail render/validation instead of skipping checks.
+Set `ANSIBLE_STDOUT_CALLBACK=default` when `community.general` is unavailable.
+Provide the ignored local BIRD/WireGuard secret files for the normal workflow:
+
+```sh
+python3 -m unittest discover -s ansible/tests -v
+ansible-playbook -i ansible/inventory.yml ansible/playbooks/render.yml --limit '!cdg01-fr'
+ansible-playbook -i ansible/inventory.yml ansible/playbooks/validate.yml --limit '!cdg01-fr'
+ansible-playbook -i ansible/inventory.yml ansible/playbooks/render-wireguard.yml --limit '!cdg01-fr'
+ansible-playbook -i ansible/inventory.yml ansible/playbooks/validate-wireguard.yml --limit '!cdg01-fr'
+```
+
+Outputs are `.rendered/<node>` and `.rendered-wireguard/<node>`. The local
+inventory excludes production connectivity, and tunnel endpoints are independent
+of management addresses. GitHub Actions runs regression tests and full offline
+BIRD rendering/validation using a dummy BGP password. WireGuard rendering with
+real secrets remains a local check; CI never receives production secrets.
+
+Internal public node announcements remain derived `/128` host routes. The
+configured `node.public_ipv6_prefix` allocates addresses; it does not originate
+that `/48`. External `/43` aggregates remain exclusively in
+`iana.static.advertise_routes`. This refactor does not consolidate every link
+into a global topology file or remove legacy peer input compatibility.

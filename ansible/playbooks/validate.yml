@@ -7,6 +7,12 @@
   vars:
     node_output_dir: "{{ render_root }}/{{ inventory_hostname }}"
   tasks:
+    - name: Verify BIRD artifact
+      ansible.builtin.include_tasks: ../tasks/verify-artifact.yml
+      vars:
+        artifact_dir: "{{ node_output_dir }}"
+        artifact_kind: bird
+
     - name: Load DN42 peer definitions
       ansible.builtin.include_tasks: ../tasks/load-dn42-peers.yml
 
@@ -44,23 +50,9 @@
       when: iana.enabled | default(false)
       no_log: true
 
-    - name: Check whether bird is installed
-      delegate_to: localhost
-      ansible.builtin.command: bash -lc 'command -v bird'
-      register: bird_binary
-      changed_when: false
-      failed_when: false
-
-    - name: Skip validation when bird is missing
-      delegate_to: localhost
-      ansible.builtin.debug:
-        msg: "bird is not installed locally; skipping {{ inventory_hostname }} parse check"
-      when: bird_binary.rc != 0
-
     - name: Run BIRD parse-only validation
       delegate_to: localhost
       ansible.builtin.command: bird -p -c bird.conf
       args:
         chdir: "{{ node_output_dir }}"
       changed_when: false
-      when: bird_binary.rc == 0

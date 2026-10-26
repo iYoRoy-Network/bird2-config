@@ -204,6 +204,7 @@ def main():
     parser.add_argument("--service-manager", choices=["systemd", "openrc"], default="systemd")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--interface", help="Apply only this interface; preserve all others")
+    parser.add_argument("--node", help="Require a sealed artifact for this node")
     args = parser.parse_args()
 
     staging_dir = Path(args.staging_dir)
@@ -211,6 +212,10 @@ def main():
     if not staging_dir.is_dir():
         print(json.dumps({"error": f"staging dir does not exist: {staging_dir}"}, ensure_ascii=False), file=sys.stderr)
         return 1
+    if args.node:
+        from artifact import verify
+        verify(staging_dir, args.node, "wireguard")
+
     staging_configs = configs(staging_dir)
     live_configs = configs(live_dir)
     desired = set(staging_configs)

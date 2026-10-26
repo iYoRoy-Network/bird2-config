@@ -5,9 +5,8 @@
   become: "{{ deploy.become | default(false) }}"
   vars:
     node_output_dir: "{{ render_root }}/{{ inventory_hostname }}"
-    bird_deploy_id: "{{ lookup('pipe', 'date -u +%Y%m%dT%H%M%SZ') }}"
-    bird_staging_dir: "{{ bird_deploy.staging_parent }}/{{ inventory_hostname }}"
-    bird_backup_dir: "{{ bird_deploy.backup_parent }}/{{ inventory_hostname }}-{{ bird_deploy_id }}"
+    bird_staging_dir: "{{ bird_run.path }}/artifact"
+    bird_backup_dir: "{{ bird_deploy.backup_parent }}/{{ bird_run.path | basename }}"
   tasks:
     - name: Skip hosts with BIRD deploy disabled
       ansible.builtin.meta: end_host
@@ -34,6 +33,16 @@
           - rendered_bird_conf.stat.exists
         fail_msg: "Render {{ inventory_hostname }} first with ansible/playbooks/render.yml."
 
+    - name: Verify BIRD artifact before upload
+      ansible.builtin.include_tasks: ../tasks/verify-artifact.yml
+      vars:
+        artifact_dir: "{{ node_output_dir }}"
+        artifact_kind: bird
+
+    - name: End after local verification in check mode
+      ansible.builtin.meta: end_host
+      when: ansible_check_mode | bool
+
     - name: Ensure remote deployment directories exist
       ansible.builtin.file:
         path: "{{ item }}"
@@ -43,10 +52,12 @@
         - "{{ bird_deploy.staging_parent }}"
         - "{{ bird_deploy.backup_parent }}"
 
-    - name: Reset remote staging directory
-      ansible.builtin.file:
-        path: "{{ bird_staging_dir }}"
-        state: absent
+    - name: Allocate isolated remote BIRD deployment directory
+      ansible.builtin.tempfile:
+        state: directory
+        path: "{{ bird_deploy.staging_parent }}"
+        prefix: "{{ inventory_hostname }}-"
+      register: bird_run
 
     - name: Create remote staging directory
       ansible.builtin.file:
@@ -72,15 +83,6 @@
       check_mode: false
       no_log: true
 
-    - name: Stop before remote parse and promote in check mode
-      ansible.builtin.debug:
-        msg: "Check mode stops before remote parse, promote, and reload for {{ inventory_hostname }}."
-      when: ansible_check_mode | bool
-
-    - name: End host in check mode
-      ansible.builtin.meta: end_host
-      when: ansible_check_mode | bool
-
     - name: Parse-check staged BIRD config remotely
       ansible.builtin.command: "{{ bird_deploy.check_command }}"
       args:
@@ -90,16 +92,28 @@
     - name: Upload shared BIRD deployment helper
       ansible.builtin.copy:
         src: ../files/bird_deploy.py
-        dest: "{{ bird_deploy.staging_parent }}/bird_deploy.py"
+        dest: "{{ bird_run.path }}/bird_deploy.py"
+        mode: '0700'
+
+    - name: Upload artifact verification helper
+      ansible.builtin.copy:
+        src: ../files/artifact.py
+        dest: "{{ bird_run.path }}/artifact.py"
         mode: '0700'
 
     - name: Apply BIRD tree with validation and recovery
       ansible.builtin.command:
         argv: >-
-          {{ ['python3', bird_deploy.staging_parent ~ '/bird_deploy.py',
+          {{ ['python3', bird_run.path ~ '/bird_deploy.py',
               '--staging-dir', bird_staging_dir,
               '--live-dir', bird_deploy.remote_dir,
               '--backup-dir', bird_backup_dir,
               '--check-command', bird_deploy.check_command,
               '--reload-command', bird_deploy.reload_command]
+             + ['--node', inventory_hostname]
              + (bird_deploy.preserve_patterns | default([]) | map('regex_replace', '^(.*)$', '--preserve=\1') | list) }}
+
+    - name: Remove successful BIRD deployment staging
+      ansible.builtin.file:
+        path: "{{ bird_run.path }}"
+        state: absent

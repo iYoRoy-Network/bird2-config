@@ -23,6 +23,9 @@ def run(command, directory):
 
 def apply(args):
     live, stage, backup = map(Path, (args.live_dir, args.staging_dir, args.backup_dir))
+    if getattr(args, "node", None):
+        from artifact import verify
+        verify(stage, args.node, "bird")
     if args.file and (Path(args.file).is_absolute() or ".." in Path(args.file).parts):
         raise ValueError("Expected a relative peer file")
     if args.dry_run:
@@ -76,6 +79,7 @@ def main():
     for name in ("staging-dir", "live-dir", "backup-dir"):
         parser.add_argument("--" + name, required=True)
     parser.add_argument("--file")
+    parser.add_argument("--node", help="Require a sealed artifact for this node")
     parser.add_argument("--remove", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--preserve", action="append", default=[])

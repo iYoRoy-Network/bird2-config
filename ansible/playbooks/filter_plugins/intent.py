@@ -106,6 +106,38 @@ def unique(items, key, label):
         seen.add(value)
 
 
+def irr_queries(iana):
+    queries = {}
+    for role, key in (("downstream", "downstreams"), ("peer", "peers")):
+        for peer in iana.get(key, []):
+            asn = int(peer["neighbor"]["asn"])
+            value = peer.get("as_set", "none")
+            if not isinstance(value, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_:.-]*", value):
+                raise AnsibleFilterError("Invalid AS-SET %r" % value)
+            if value.lower() == "none":
+                continue
+            name = "%s_%s_as_set" % (role, asn)
+            if name in queries and queries[name] != value:
+                raise AnsibleFilterError("Conflicting AS-SETs for %s" % name)
+            queries[name] = value
+    return dict(sorted(queries.items()))
+
+
+def irr_defines(snapshot, queries):
+    if snapshot.get("queries") != queries:
+        raise AnsibleFilterError("IRR snapshot does not match peer intent; run update-irr.yml")
+    sets = snapshot.get("sets", {})
+    if set(sets) != set(queries):
+        raise AnsibleFilterError("Incomplete IRR snapshot")
+    lines = []
+    for name in queries:
+        values = sets[name]
+        if not values or any(type(asn) is not int or not 1 <= asn <= 4294967295 for asn in values):
+            raise AnsibleFilterError("Invalid/empty IRR ASN list for %s" % name)
+        lines.append("define %s = [%s];" % (name, ", ".join(map(str, sorted(set(values))))))
+    return "\n".join(lines) + "\n"
+
+
 def materialize_intent(config, hostvars, hostname, defaults):
     """Build transport interfaces and internal sessions without mutating input."""
     intra, dn42, wireguard = (config.get(name, {}) for name in ("intra", "dn42", "wireguard"))
@@ -164,4 +196,5 @@ def materialize_intent(config, hostvars, hostname, defaults):
 class FilterModule:
     def filters(self):
         return {"intra_session": intra_session, "bird_modules": bird_modules,
-                "dn42_sessions": dn42_sessions, "materialize_intent": materialize_intent}
+                "dn42_sessions": dn42_sessions, "materialize_intent": materialize_intent,
+                "irr_queries": irr_queries, "irr_defines": irr_defines}

@@ -1,0 +1,15 @@
+---
+- name: Verify rendered artifact identity and content before use
+  delegate_to: localhost
+  become: false
+  ansible.builtin.command:
+    argv:
+      - python3
+      - "{{ playbook_dir }}/../files/artifact.py"
+      - "{{ artifact_dir }}"
+      - --node
+      - "{{ inventory_hostname }}"
+      - --kind
+      - "{{ artifact_kind }}"
+  changed_when: false
+  check_mode: false

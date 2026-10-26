@@ -41,9 +41,10 @@ numeric ranges fail rendering.
 
 ## PoP Configuration
 
-The existing `dn42.region` and `dn42.country` provide the shared PoP location.
-An optional `node.geo` mapping takes precedence and also supports IANA-only
-nodes. Do not use `node.region` for this: it is an internal addressing index.
+Set the shared PoP location in `node.geo.region` and `node.geo.country`,
+including on IANA-only nodes. Operational configurations no longer use
+`dn42.region` or `dn42.country`. Do not use `node.region` for this: it is an
+internal addressing index.
 
 ## Verification
 

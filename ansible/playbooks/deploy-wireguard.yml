@@ -5,8 +5,9 @@
   become: "{{ deploy.become | default(false) }}"
   vars:
     wg_output_dir: "{{ wireguard_deploy.render_root }}/{{ inventory_hostname }}"
-    wireguard_staging_dir: "{{ wireguard_deploy.staging_parent }}/{{ inventory_hostname }}"
-    wireguard_helper_path: "{{ wireguard_deploy.staging_parent }}/wireguard_deploy.py"
+    wireguard_staging_dir: "{{ wireguard_run.path }}/artifact"
+    wireguard_helper_path: "{{ wireguard_run.path }}/wireguard_deploy.py"
+    wireguard_backup_dir: "{{ wireguard_deploy.backup_parent }}/{{ wireguard_run.path | basename }}"
   tasks:
     - name: Skip hosts with WireGuard deploy disabled
       ansible.builtin.meta: end_host
@@ -20,6 +21,7 @@
         that:
           - ansible_host is defined
           - ansible_host != 'CHANGEME'
+          - ansible_connection | default('ssh') != 'local'
         fail_msg: "Set ansible_host for {{ inventory_hostname }} in ansible/inventory.production.yml before deploying WireGuard."
 
     - name: Materialize domain intent variables
@@ -31,10 +33,6 @@
           - effective_wireguard_interfaces is defined
           - effective_wireguard_interfaces | length > 0
         fail_msg: "No effective_wireguard_interfaces for {{ inventory_hostname }} before deploying WireGuard."
-
-    - name: Set WireGuard deployment backup path
-      ansible.builtin.set_fact:
-        wireguard_backup_dir: "{{ wireguard_deploy.backup_parent }}/{{ inventory_hostname }}-{{ lookup('pipe', 'date -u +%Y%m%dT%H%M%SZ') }}"
 
     - name: Check rendered WireGuard config directory exists locally
       delegate_to: localhost
@@ -50,6 +48,16 @@
           - rendered_wireguard_dir.stat.isdir
         fail_msg: "Render {{ inventory_hostname }} WireGuard configs first with ansible/playbooks/render-wireguard.yml."
 
+    - name: Verify WireGuard artifact before upload
+      ansible.builtin.include_tasks: ../tasks/verify-artifact.yml
+      vars:
+        artifact_dir: "{{ wg_output_dir }}"
+        artifact_kind: wireguard
+
+    - name: End after local verification in check mode
+      ansible.builtin.meta: end_host
+      when: ansible_check_mode | bool
+
     - name: Ensure remote WireGuard deployment directories exist
       ansible.builtin.file:
         path: "{{ item }}"
@@ -58,13 +66,13 @@
       loop:
         - "{{ wireguard_deploy.staging_parent }}"
         - "{{ wireguard_deploy.backup_parent }}"
-      check_mode: false
 
-    - name: Reset remote WireGuard staging directory
-      ansible.builtin.file:
-        path: "{{ wireguard_staging_dir }}"
-        state: absent
-      check_mode: false
+    - name: Allocate isolated remote WireGuard deployment directory
+      ansible.builtin.tempfile:
+        state: directory
+        path: "{{ wireguard_deploy.staging_parent }}"
+        prefix: "{{ inventory_hostname }}-"
+      register: wireguard_run
 
     - name: Create remote WireGuard staging directory
       ansible.builtin.file:
@@ -100,6 +108,15 @@
         mode: "0700"
       check_mode: false
 
+    - name: Upload artifact verification helper
+      ansible.builtin.copy:
+        src: ../files/artifact.py
+        dest: "{{ wireguard_run.path }}/artifact.py"
+        owner: root
+        group: root
+        mode: '0700'
+      check_mode: false
+
     - name: Run WireGuard deploy helper
       ansible.builtin.command:
         argv: >-
@@ -110,6 +127,7 @@
               '--staging-dir', wireguard_staging_dir,
               '--live-dir', wireguard_deploy.remote_dir,
               '--backup-dir', wireguard_backup_dir,
+              '--node', inventory_hostname,
               '--service-manager', deploy.service_manager | default('systemd')
             ] + (['--dry-run'] if ansible_check_mode | bool else [])
           }}
@@ -120,3 +138,8 @@
     - name: Show WireGuard deploy helper summary
       ansible.builtin.debug:
         msg: "{{ wireguard_helper_result.stdout | from_json }}"
+
+    - name: Remove successful WireGuard deployment staging
+      ansible.builtin.file:
+        path: "{{ wireguard_run.path }}"
+        state: absent
