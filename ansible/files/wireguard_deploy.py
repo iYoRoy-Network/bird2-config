@@ -78,6 +78,16 @@ def enabled_openrc():
     return enabled
 
 
+def active_interfaces(service_manager, interfaces):
+    active = set()
+    for interface in interfaces:
+        command = (["systemctl", "is-active", "--quiet", f"wg-quick@{interface}.service"]
+                   if service_manager == "systemd" else ["rc-service", f"wg-quick.{interface}", "status"])
+        if run(command, check=False).returncode == 0:
+            active.add(interface)
+    return active
+
+
 def service_command(service_manager, action, interface):
     if service_manager == "systemd":
         return ["systemctl", action, f"wg-quick@{interface}.service"]
@@ -150,7 +160,7 @@ def backup_live(live_dir, backup_dir):
     live = Path(live_dir)
     if not live.exists():
         return False
-    Path(backup_dir).mkdir(parents=True, mode=0o700, exist_ok=True)
+    Path(backup_dir).mkdir(parents=True, mode=0o700, exist_ok=False)
     run(["rsync", "-a", f"{live}/", f"{backup_dir}/"])
     return True
 
@@ -176,6 +186,16 @@ def restore(backup_dir, live_dir):
     return False
 
 
+def restore_scope(backup_dir, live_dir, interface):
+    for name in (interface + ".conf", "manifest.json"):
+        source, target = Path(backup_dir) / name, Path(live_dir) / name
+        if source.exists():
+            shutil.copy2(source, target)
+        else:
+            target.unlink(missing_ok=True)
+    return True
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--staging-dir", required=True)
@@ -191,7 +211,6 @@ def main():
     if not staging_dir.is_dir():
         print(json.dumps({"error": f"staging dir does not exist: {staging_dir}"}, ensure_ascii=False), file=sys.stderr)
         return 1
-
     staging_configs = configs(staging_dir)
     live_configs = configs(live_dir)
     desired = set(staging_configs)
@@ -201,12 +220,14 @@ def main():
         desired &= {args.interface}
         live &= {args.interface}
         enabled &= {args.interface}
+    active = active_interfaces(args.service_manager, desired | live | enabled)
 
     added = sorted(desired - live)
     changed = sorted(name for name in desired & live if staging_configs[name] != live_configs[name])
     removed = sorted((live | enabled) - desired)
     missing_enabled = sorted(desired - enabled)
-    start = added
+    missing_active = sorted(desired - active)
+    start = sorted((set(added) | set(missing_active)) - set(changed))
     restart = changed
 
     service_results = []
@@ -215,15 +236,17 @@ def main():
     promoted = False
     restored = False
     touched = False
+    affected = set(added + changed + removed + missing_enabled + missing_active)
 
     summary = {
-        "changed": bool(added or changed or removed or missing_enabled),
+        "changed": bool(affected),
         "dry_run": args.dry_run,
         "service_manager": args.service_manager,
         "added": added,
         "changed_configs": changed,
         "removed": removed,
         "missing_enabled": missing_enabled,
+        "missing_active": missing_active,
         "start": start,
         "restart": restart,
         "backup_dir": args.backup_dir,
@@ -261,6 +284,7 @@ def main():
 
         touched = True
         if args.interface:
+            (live_dir / "manifest.json").unlink(missing_ok=True)
             Path(live_dir).mkdir(parents=True, mode=0o700, exist_ok=True)
             target = live_dir / (args.interface + ".conf")
             if args.interface in desired:
@@ -291,30 +315,47 @@ def main():
 
     except Exception as error:
         recovery = []
+
+        def recover_action(name, interface):
+            try:
+                if args.service_manager == "openrc" and name in {"enable", "start"}:
+                    ensure_openrc_link(interface, False)
+                recovery.append(apply_service_action(args.service_manager, name, interface, False, True))
+                if args.service_manager == "openrc" and name == "disable":
+                    if interface in live:
+                        ensure_openrc_link(interface, False)
+                    else:
+                        remove_openrc_link(interface, False)
+            except Exception as recovery_error:
+                recovery.append({"interface": interface, "action": name, "error": str(recovery_error), "rc": 1})
+
         if touched:
             # Stop new configurations while their teardown hooks are available.
-            for interface in sorted(set(added + changed)):
-                recovery.append(apply_service_action(args.service_manager, "stop", interface, False, True))
-            if backup_available:
-                restored = restore(args.backup_dir, live_dir)
-            else:
-                for interface in added:
-                    (live_dir / (interface + ".conf")).unlink(missing_ok=True)
-                restored = True
-            for interface in sorted(set(added + missing_enabled) - enabled):
-                recovery.append(apply_service_action(args.service_manager, "disable", interface, False, True))
-                if args.service_manager == "openrc":
-                    remove_openrc_link(interface, False)
-            for interface in sorted(enabled):
-                if args.service_manager == "openrc":
-                    ensure_openrc_link(interface, False)
-                recovery.append(apply_service_action(args.service_manager, "enable", interface, False, True))
-                if interface in changed or interface in removed:
-                    recovery.append(apply_service_action(args.service_manager, "restart", interface, False, True))
+            if promoted:
+                for interface in sorted(set(start + changed)):
+                    recover_action("stop", interface)
+            try:
+                if args.interface:
+                    restored = restore_scope(args.backup_dir, live_dir, args.interface)
+                elif backup_available:
+                    restored = restore(args.backup_dir, live_dir)
+                else:
+                    shutil.rmtree(live_dir, ignore_errors=True)
+                    restored = True
+            except Exception as recovery_error:
+                recovery.append({"action": "restore-files", "error": str(recovery_error), "rc": 1})
+            for interface in sorted(affected - enabled):
+                recover_action("disable", interface)
+            for interface in sorted(affected & enabled):
+                recover_action("enable", interface)
+            if restored:
+                for interface in sorted(affected & active):
+                    recover_action("start", interface)
         summary["error"] = str(error)
         summary["promoted"] = promoted
         summary["restored"] = restored
         summary["recovery_results"] = recovery
+        summary["recovery_failed"] = not restored or any(item.get("rc", 0) for item in recovery)
         print(json.dumps(summary, indent=2, sort_keys=True, ensure_ascii=False), file=sys.stderr)
         return 1
 

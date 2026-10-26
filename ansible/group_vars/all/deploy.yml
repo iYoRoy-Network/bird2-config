@@ -5,7 +5,7 @@ bird_deploy:
   staging_parent: /var/tmp/bird2-configuration
   backup_parent: /var/backups/bird2-configuration
   check_command: bird -p -c bird.conf
-  reload_command: birdc configure
+  reload_command: birdc -v configure
   secrets_file: '{{ inventory_dir }}/secrets/bird.yml'
   preserve_patterns:
     - secrets.conf

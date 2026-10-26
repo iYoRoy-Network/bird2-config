@@ -17,6 +17,10 @@
           - target_peer_state in ['present', 'absent']
           - apply_wireguard | default(true) | bool or apply_bird | default(true) | bool
 
+    - name: End before remote changes in check mode
+      ansible.builtin.meta: end_host
+      when: ansible_check_mode | bool
+
     - name: Allocate isolated peer staging directory
       ansible.builtin.tempfile:
         state: directory
@@ -121,8 +125,12 @@
                   '--reload-command', bird_deploy.reload_command]
                  + (['--remove'] if not peer_present | bool else []) }}
           when: apply_bird | default(true) | bool
-      always:
-        - name: Remove isolated staging directory
-          ansible.builtin.file:
-            path: "{{ peer_stage.path }}"
-            state: absent
+      rescue:
+        - name: Retain backups for inspection after a failed peer update
+          ansible.builtin.fail:
+            msg: "Peer update failed. Recovery details are above; staging and backups remain at {{ peer_stage.path }}."
+
+    - name: Remove successful peer staging directory
+      ansible.builtin.file:
+        path: "{{ peer_stage.path }}"
+        state: absent
