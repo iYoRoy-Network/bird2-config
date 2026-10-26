@@ -34,6 +34,7 @@ function {{ 'iana' if own_as == 'IANA_OWNAS' else 'dn42' }}_add_geo(int peer_reg
 # Match runtime arguments as single tuples; keep sets for constant wildcards.
 #   D  650/651:<region>, 660/661:<country>, 670/671:<ASN>  deny / only
 #   E  691-696:<ASN>  prepend 1/2/3x to specified / non-specified ASes
+#      697-702:<region>, 703-708:<country>  same for endpoint geography
 #   A  1xxxxx/2xxxxx  attach well-known community to specified/all / others
 function {{ fn_name }}(int peer_as; int peer_region; int peer_country) -> bool {
 {% for kind in ['REGION', 'COUNTRY'] %}
@@ -54,6 +55,22 @@ function {{ fn_name }}(int peer_as; int peer_region; int peer_country) -> bool {
        !(({{ own_as }}, COMM_FN_PREPEND_AS_OTHERS_2, peer_as) ~ bgp_large_community) then { bgp_path.prepend({{ own_as }}); bgp_path.prepend({{ own_as }}); }
     if bgp_large_community ~ [({{ own_as }}, COMM_FN_PREPEND_AS_OTHERS_3, *)] &&
        !(({{ own_as }}, COMM_FN_PREPEND_AS_OTHERS_3, peer_as) ~ bgp_large_community) then { bgp_path.prepend({{ own_as }}); bgp_path.prepend({{ own_as }}); bgp_path.prepend({{ own_as }}); }
+
+{% for kind in ['REGION', 'COUNTRY'] %}
+{% for count in [1, 2, 3] %}
+    if ({{ own_as }}, COMM_FN_PREPEND_{{ kind }}_{{ count }}, peer_{{ kind | lower }}) ~ bgp_large_community then {
+{% for _ in range(count) %}
+        bgp_path.prepend({{ own_as }});
+{% endfor %}
+    }
+    if bgp_large_community ~ [({{ own_as }}, COMM_FN_PREPEND_{{ kind }}_OTHERS_{{ count }}, *)] &&
+       !(({{ own_as }}, COMM_FN_PREPEND_{{ kind }}_OTHERS_{{ count }}, peer_{{ kind | lower }}) ~ bgp_large_community) then {
+{% for _ in range(count) %}
+        bgp_path.prepend({{ own_as }});
+{% endfor %}
+    }
+{% endfor %}
+{% endfor %}
 
     if bgp_large_community ~ [({{ own_as }}, COMM_FN_ATTACH_BLACKHOLE, 0)] ||
        ({{ own_as }}, COMM_FN_ATTACH_BLACKHOLE, peer_as) ~ bgp_large_community then

@@ -7,8 +7,6 @@
 #   FN_*      function code — the middle field of <ASN>:<fn>:<arg>
 #   ORIGIN_*  origin value  — the arg of <ASN>:<FN_IDENTIFY>:<arg>
 #   WK_*      well-known value — the arg of <ASN>:<FN_WELLKNOWN>:<arg>
-# Function codes for not-yet-implemented communities.csv features (prepend
-# 697-708) are added here when those features land.
 bgp_community:
   FN_IDENTIFY: 2
   FN_GEO_SRC: 644
@@ -31,6 +29,18 @@ bgp_community:
   FN_PREPEND_AS_OTHERS_1: 694
   FN_PREPEND_AS_OTHERS_2: 695
   FN_PREPEND_AS_OTHERS_3: 696
+  FN_PREPEND_REGION_1: 697
+  FN_PREPEND_REGION_2: 698
+  FN_PREPEND_REGION_3: 699
+  FN_PREPEND_REGION_OTHERS_1: 700
+  FN_PREPEND_REGION_OTHERS_2: 701
+  FN_PREPEND_REGION_OTHERS_3: 702
+  FN_PREPEND_COUNTRY_1: 703
+  FN_PREPEND_COUNTRY_2: 704
+  FN_PREPEND_COUNTRY_3: 705
+  FN_PREPEND_COUNTRY_OTHERS_1: 706
+  FN_PREPEND_COUNTRY_OTHERS_2: 707
+  FN_PREPEND_COUNTRY_OTHERS_3: 708
   FN_WELLKNOWN: 65535
   ORIGIN_CUSTOMER: 100
   ORIGIN_PEER: 101

@@ -59,6 +59,30 @@ with `[IANA_OWNAS, COMM_FN_ONLY_COUNTRY, GEO_COUNTRY_JAPAN]` permits only peers
 whose configured region is East Asia and country is Japan, subject to the
 existing export eligibility checks.
 
+### Geographic Prepending
+
+| Function | Argument | Behavior |
+| --- | --- | --- |
+| 697 / 698 / 699 | REGION | Prepend own ASN 1 / 2 / 3 times to listed regions |
+| 700 / 701 / 702 | REGION | Prepend own ASN 1 / 2 / 3 times outside listed regions |
+| 703 / 704 / 705 | COUNTRY | Prepend own ASN 1 / 2 / 3 times to listed countries |
+| 706 / 707 / 708 | COUNTRY | Prepend own ASN 1 / 2 / 3 times outside listed countries |
+
+These controls use the same target peer/session `geo` mapping as deny/only,
+not the route's 644/645 markers. Country values still include the +1000 offset.
+For example, `205369:698:52` adds two AS205369 entries for East Asian peers;
+`205369:708:1392` adds three for peers outside Japan. DN42 controls use the
+AS4242422024 namespace and prepend AS4242422024 instead.
+
+Multiple values of one function form a target list (or exclusion list for
+`OTHERS`): the action runs at most once for that function, not once per tag.
+An `OTHERS` action requires at least one tag of that function and does nothing
+if the target is among its listed values. Without any prepend controls, no
+extra ASN is added. Different matching prepend functions are additive,
+including ASN-, region-, and country-based actions. Deny/only checks still
+run first, and consumed controls are removed only on external export.
+These counts are policy additions; normal eBGP AS_PATH processing still applies.
+
 Runtime target matching uses `(own_as, function_code, peer_as) ~
 bgp_large_community`. Set literals with runtime parameters parsed successfully
 on BIRD 2.17.2 but failed the target-matching regression tests; constant
@@ -74,6 +98,8 @@ The export tests execute rendered policy functions in an isolated BIRD
 instance with static routes, empty ROA tables, and no kernel/BGP protocols.
 They cover IANA peer/upstream/downstream policies, DN42 eBGP/IX IPv4 and IPv6,
 ingress sanitation, confederation transport, and selective export cleanup.
+Geographic prepend cases cover every function's matching and non-matching
+targets, multi-value lists, additive actions, and domain isolation.
 They do not establish live BGP sessions.
 
 Deploy the full BIRD configuration when updating these shared functions;

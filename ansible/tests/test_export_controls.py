@@ -47,9 +47,13 @@ class ExportControlTests(unittest.TestCase):
                        "dn42_ebgp_export_v6", "dn42_ix_export_v6"):
             own = 4242422024 if policy.startswith("dn42") else 205369
             base = f"bgp_path.prepend(65001); bgp_large_community.add(({own}, 2, 100));"
+            policy_start = len(cases)
             # Empty ROA tables yield UNKNOWN; all prefixes satisfy the domain policy.
             def case(label, body, accepted=True, present=(), absent=()):
-                prefix = None
+                # IANA requires <= /48; reserve the owned /40 for own_only cases.
+                subnet = (0xf200 + len(cases) - policy_start if policy.endswith("own_only")
+                          else 0xe000 + len(cases))
+                prefix = f"2a14:7583:{subnet:x}::/48"
                 if own == 4242422024:
                     prefix = (f"10.{100 + len(cases) // 256}.{len(cases) % 256}.0/24" if policy.endswith("v4")
                               else f"fdab:{len(cases) + 1:x}::/48")
@@ -58,9 +62,13 @@ class ExportControlTests(unittest.TestCase):
                     f"if !{policy}(6939, 52, 1392) then reject; accept;", accepted, present, absent, prefix,
                 )
 
+            def tags(*entries):
+                return "".join(f"bgp_large_community.add(({own}, {fn}, {value}));" for fn, value in entries)
+
+            def as_path(count):
+                return "BGP.as_path: " + " ".join([str(own)] * count + ["65001"])
+
             for deny, only, target, elsewhere in ((650, 651, 52, 44), (660, 661, 1392, 1840)):
-                def tags(*entries):
-                    return "".join(f"bgp_large_community.add(({own}, {fn}, {value}));" for fn, value in entries)
                 case(f"deny geo {deny}", tags((deny, target)), False)
                 case(f"deny other geo {deny}", tags((deny, elsewhere)))
                 case(f"only geo {only}", tags((only, target)), absent=(f"({own}, {only}, {target})",))
@@ -93,6 +101,59 @@ class ExportControlTests(unittest.TestCase):
                     f"do not prepend {fn}", f"bgp_large_community.add(({own}, {fn}, {non_target}));",
                     present=("BGP.as_path: 65001",),
                 )
+            case("no prepend controls", "", present=(as_path(0),))
+            for first, target, elsewhere, third in ((697, 52, 44, 41), (703, 1392, 1840, 1826)):
+                for offset in range(6):
+                    fn = first + offset
+                    count = offset % 3 + 1
+                    inverted = offset >= 3
+                    match, miss = (elsewhere, target) if inverted else (target, elsewhere)
+                    case(
+                        f"geographic prepend {fn}", tags((fn, match)),
+                        present=(as_path(count),), absent=(f"({own}, {fn}, {match})",),
+                    )
+                    case(
+                        f"no geographic prepend {fn}", tags((fn, miss)),
+                        present=(as_path(0),), absent=(f"({own}, {fn}, {miss})",),
+                    )
+                    case(
+                        f"multiple geographic targets {fn}", tags((fn, target), (fn, elsewhere)),
+                        present=(as_path(0 if inverted else count),),
+                        absent=(f"({own}, {fn}, {target})", f"({own}, {fn}, {elsewhere})"),
+                    )
+                    case(
+                        f"multiple nonmatching geographic targets {fn}", tags((fn, elsewhere), (fn, third)),
+                        present=(as_path(count if inverted else 0),),
+                    )
+                    case(
+                        f"other domain geographic prepend {fn}",
+                        f"bgp_large_community.add(({other}, {fn}, {match}));",
+                        present=(as_path(0),), absent=(f"({other}, {fn}, {match})",),
+                    )
+                    case(
+                        f"third-party geographic prepend {fn}",
+                        f"bgp_large_community.add((65002, {fn}, {match}));",
+                        present=(as_path(0), f"(65002, {fn}, {match})"),
+                    )
+                    case(
+                        f"deny before geographic prepend {fn}", tags((650, 52), (fn, match)), False,
+                    )
+            case(
+                "geographic prepend uses peer rather than route geo",
+                tags((644, 44), (644, 1840), (645, 44), (645, 1840),
+                     (697, 52), (703, 1392), (698, 44), (704, 1840)),
+                present=(as_path(2),),
+            )
+            case(
+                "ASN region and country prepends are additive",
+                tags((691, 6939), (697, 52), (698, 52), (699, 52), (704, 1392), (708, 1840)),
+                present=(as_path(12),),
+            )
+            case(
+                "specified and non-specified geographic prepends are additive",
+                tags((697, 52), (701, 44), (703, 1392), (707, 1840)),
+                present=(as_path(6),),
+            )
             for fn, wellknown in ((100666, 666), (165281, 65281), (165282, 65282),
                                   (200666, 666), (265281, 65281), (265282, 65282)):
                 target = 65002 if fn in (200666, 265281, 265282) else 6939
@@ -138,12 +199,15 @@ class ExportControlTests(unittest.TestCase):
             bgp_large_community.add((205369, 650, 44));
             bgp_large_community.add((205369, 661, 1392));
             bgp_large_community.add((4242422024, 691, 65002));
+            bgp_large_community.add((205369, 697, 52));
+            bgp_large_community.add((4242422024, 708, 1392));
             bgp_large_community.add((65002, 670, 6939));
             """,
             "iana_peer_import_default(52, 1392);",
             present=("(205369, 2, 101)", "(205369, 644, 52)", "(205369, 645, 44)",
                      "(205369, 670, 6939)", "(205369, 650, 44)", "(205369, 661, 1392)",
-                     "(4242422024, 691, 65002)", "(65002, 670, 6939)"),
+                     "(4242422024, 691, 65002)", "(65002, 670, 6939)",
+                     "(205369, 697, 52)", "(4242422024, 708, 1392)", "BGP.as_path: 65001"),
             absent=("(205369, 2, 100)", "(4242422024, 2, 100)", "(4242422024, 644, 41)"),
         )
 
@@ -158,10 +222,14 @@ class ExportControlTests(unittest.TestCase):
             bgp_large_community.add((205369, 670, 6939));
             bgp_large_community.add((205369, 651, 52));
             bgp_large_community.add((205369, 660, 1840));
+            bgp_path.prepend(65001);
+            bgp_large_community.add((205369, 697, 52));
+            bgp_large_community.add((4242422024, 708, 1392));
             """,
             "@intra_ibgp_export_full",
             present=("(205369, 2, 100)", "(205369, 644, 52)", "(205369, 645, 44)", "(205369, 670, 6939)",
-                     "(205369, 651, 52)", "(205369, 660, 1840)"),
+                     "(205369, 651, 52)", "(205369, 660, 1840)",
+                     "(205369, 697, 52)", "(4242422024, 708, 1392)", "BGP.as_path: 65001"),
         )
         ibgp = render("iana/ibgp.conf", **context)
         functions += "\n" + ibgp.partition("template bgp")[0]
@@ -173,9 +241,13 @@ class ExportControlTests(unittest.TestCase):
             bgp_large_community.add((205369, 644, 52));
             bgp_large_community.add((205369, 645, 44));
             bgp_large_community.add((205369, 670, 6939));
+            bgp_path.prepend(65001);
+            bgp_large_community.add((205369, 697, 52));
+            bgp_large_community.add((4242422024, 708, 1392));
             """,
             ibgp_export,
-            present=("(205369, 2, 100)", "(205369, 644, 52)", "(205369, 645, 44)", "(205369, 670, 6939)"),
+            present=("(205369, 2, 100)", "(205369, 644, 52)", "(205369, 645, 44)", "(205369, 670, 6939)",
+                     "(205369, 697, 52)", "(4242422024, 708, 1392)", "BGP.as_path: 65001"),
         )
         add_case(
             "downstream reject policy",
@@ -239,7 +311,10 @@ roa6 table dn42_roa_flap_v6;
                                 continue
                             self.assertIn(case["prefix"], output)
                             for value in case["present"]:
-                                self.assertIn(value, output)
+                                if value.startswith("BGP.as_path:"):
+                                    self.assertIn(value, [line.strip() for line in output.splitlines()])
+                                else:
+                                    self.assertIn(value, output)
                             for value in case["absent"]:
                                 self.assertNotIn(value, output)
                 finally:
