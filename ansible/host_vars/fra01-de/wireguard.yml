@@ -1,6 +1,6 @@
 wireguard:
   default_private_key_ref: fra01-de/default
-  interfaces:
+  standalone_interfaces:
   - name: intra_hkg02
     address_mode: intra_local
     listen_port: 10225

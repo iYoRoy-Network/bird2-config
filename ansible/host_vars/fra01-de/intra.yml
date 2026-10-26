@@ -21,6 +21,7 @@ intra:
     - node: cdg01-fr
       interface: intra_cdg01
       wireguard:
+        endpoint: ipv4.cdg01-fr.ecs.iyoroy-infra.top:50225
         public_key: vLZLdiJrDyGpUIY5y/qR5XIvyaWCcTM4uk9Y6kdIKk8=
         listen_port: 10123
         fwmark: '4242'

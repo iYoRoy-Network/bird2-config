@@ -43,9 +43,9 @@
 
         - name: Restrict materialization to target peer
           ansible.builtin.set_fact:
-            dn42: "{{ dn42 | default({}) | combine({'peers': [target_peer]}) }}"
-            intra: {auto_confed_peers: [], explicit_confed_peers: []}
-            wireguard: "{{ wireguard | combine({'interfaces': []}) }}"
+            dn42: "{{ dn42 | default({}) | combine({'enabled': true, 'peers': [target_peer]}) }}"
+            intra: {enabled: false, auto_confed_peers: [], explicit_confed_peers: []}
+            wireguard: "{{ wireguard | combine({'standalone_interfaces': []}) }}"
           when: peer_present | bool
 
         - name: Materialize target

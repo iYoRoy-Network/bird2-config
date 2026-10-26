@@ -16,6 +16,9 @@
     - name: Derive enabled domain files and defines
       ansible.builtin.include_tasks: ../tasks/derive-bird-context.yml
 
+    - name: Normalize and validate domain intent
+      ansible.builtin.include_tasks: ../tasks/materialize-domain-intent.yml
+
     - name: Check optional BIRD secrets file
       delegate_to: localhost
       ansible.builtin.stat:
@@ -104,9 +107,6 @@
       loop_control:
         loop_var: peer
         label: "dn42_{{ peer.asn }}"
-
-    - name: Materialize domain intent variables
-      ansible.builtin.include_tasks: ../tasks/materialize-domain-intent.yml
 
     - name: Render intra module files
       delegate_to: localhost

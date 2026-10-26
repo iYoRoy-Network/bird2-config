@@ -1,6 +1,6 @@
 wireguard:
   default_private_key_ref: pvg01-cn/default
-  interfaces:
+  standalone_interfaces:
   - name: intra_pvg_82b4
     address:
     - fe80::5fac/64
