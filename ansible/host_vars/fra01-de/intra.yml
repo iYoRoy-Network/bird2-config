@@ -1,4 +1,5 @@
 intra:
+  enabled: true
   auto_confed_peers:
     - node: fra02-de
       interface: intra_fra02

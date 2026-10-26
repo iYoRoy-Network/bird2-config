@@ -1,6 +1,5 @@
 dn42:
-  region: ASIA_EAST
-  country: HONG_KONG
+  enabled: true
   flapalerted:
     neighbor:
       port: 1790

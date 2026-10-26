@@ -63,11 +63,6 @@ def public_ipv6(node):
     return str(IPv6Address(int(network.network_address) | int(token, 16)))
 
 
-def public_net_v6(node):
-    """Derived IANA public IPv6 /43 for a node."""
-    return "2a14:7583:f2%01x0::/43" % (node["region"] * 2)
-
-
 class FilterModule(object):
     def filters(self):
         return {
@@ -76,5 +71,4 @@ class FilterModule(object):
             "intra_loopback_v6": intra_loopback_v6,
             "intra_as": intra_as,
             "public_ipv6": public_ipv6,
-            "public_net_v6": public_net_v6,
         }

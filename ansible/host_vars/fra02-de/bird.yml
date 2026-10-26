@@ -1,13 +1,2 @@
 bird:
   log_syslog_all: false
-  device_scan_time: 10
-  device_semicolon: false
-modules:
-  iana:
-    enabled: false
-  dn42:
-    enabled: true
-    inactive_files:
-    - rpki.conf
-  intra:
-    enabled: true

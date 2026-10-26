@@ -1,4 +1,5 @@
 intra:
+  enabled: true
   auto_confed_peers:
     - node: hkg02-hk
       interface: intra_hkg02

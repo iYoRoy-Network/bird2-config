@@ -37,7 +37,7 @@
         that:
           - session.password_ref is not defined or bird_secrets.bgp_passwords[session.password_ref] is defined
         fail_msg: "Missing BIRD BGP password secret for {{ inventory_hostname }} {{ session.protocol }}."
-      loop: "{{ (iana.upstreams | default([])) + (iana.downstreams | default([])) }}"
+      loop: "{{ (iana.upstreams4 | default([])) + (iana.upstreams6 | default([])) + (iana.downstreams | default([])) }}"
       loop_control:
         loop_var: session
         label: "{{ session.protocol }}"

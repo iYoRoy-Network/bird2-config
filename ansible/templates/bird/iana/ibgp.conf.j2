@@ -18,12 +18,12 @@ template bgp iana_ibgp {
 
     ipv6 {
         import filter {
-            if !iana_filter_default_check() then reject;
+            if !iana_internal_check() then reject;
             iana_ibgp_add_community();
             accept;
         };
         export filter {
-            if !iana_filter_default_check() then reject;
+            if !iana_internal_check() then reject;
             if !iana_ibgp_check_community() then reject;
             remove_confederation_as();
             accept;

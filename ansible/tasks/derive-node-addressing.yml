@@ -5,7 +5,6 @@
 - name: Derive node addressing variables
   ansible.builtin.set_fact:
     derived_public_ipv6: "{{ node | public_ipv6 }}"
-    derived_public_net_v6: "{{ node | public_net_v6 }}"
     derived_intra_as: "{{ node | intra_as(intra_global) }}"
     derived_intra_loopback_v4: "{{ node | intra_loopback_v4 }}"
     derived_intra_loopback_v6: "{{ node | intra_loopback_v6(intra_global) }}"

@@ -9,7 +9,7 @@ protocol kernel kernel_v4{
                 reject;
             }
             krt_prefsrc = {{ derived_intra_loopback_v4 }};
-{% if dn42 is defined and dn42.own_ip is defined %}            if bgp_large_community ~ [(DN42_OWNAS,*,*)] && !(net ~ {{ intra_global.prefix_v4 }}) then krt_prefsrc = {{ dn42.own_ip }};
+{% if dn42 is defined and dn42.enabled | default(false) and dn42.own_ip is defined %}            if bgp_large_community ~ [(DN42_OWNAS,*,*)] && !(net ~ {{ intra_global.prefix_v4 }}) then krt_prefsrc = {{ dn42.own_ip }};
 {% endif %}            accept;
         };
     };
@@ -26,8 +26,8 @@ protocol kernel kernel_v6 {
                 reject;
             }
             krt_prefsrc = {{ derived_intra_loopback_v6 }};
-{% if dn42 is defined and dn42.own_ipv6 is defined %}            if bgp_large_community ~ [(DN42_OWNAS,*,*)] && !(net ~ {{ intra_global.prefix_v6 }}) then krt_prefsrc = {{ dn42.own_ipv6 }};
-{% endif %}{% if iana is defined and iana.enabled | default(false) %}            if bgp_large_community ~ [(IANA_OWNAS,*,*)] && !(net ~ {{ intra_global.prefix_v6 }}) then krt_prefsrc = {{ iana.own_ipv6 | default(derived_public_ipv6) }};
+{% if dn42 is defined and dn42.enabled | default(false) and dn42.own_ipv6 is defined %}            if bgp_large_community ~ [(DN42_OWNAS,*,*)] && !(net ~ {{ intra_global.prefix_v6 }}) then krt_prefsrc = {{ dn42.own_ipv6 }};
+{% endif %}{% if iana is defined and iana.enabled | default(false) %}            if bgp_large_community ~ [(IANA_OWNAS,*,*)] && !(net ~ {{ intra_global.prefix_v6 }}) then krt_prefsrc = {{ derived_public_ipv6 }};
 {% endif %}            accept;
         };
     };

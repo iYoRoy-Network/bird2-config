@@ -19,6 +19,9 @@ SPEC = importlib.util.spec_from_file_location(
 )
 GEO = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(GEO)
+SPEC_INTENT = importlib.util.spec_from_file_location("intent", ROOT / "ansible/playbooks/filter_plugins/intent.py")
+INTENT = importlib.util.module_from_spec(SPEC_INTENT)
+SPEC_INTENT.loader.exec_module(INTENT)
 
 
 def variables():
@@ -36,6 +39,7 @@ def render(name, **values):
         lstrip_blocks=True,
     )
     env.filters.update(GEO.FilterModule().filters())
+    env.filters.update(INTENT.FilterModule().filters())
     env.filters["combine"] = lambda left, right: {**left, **right}
     return env.get_template(f"bird/{name}.j2").render(**(variables() | values))
 
@@ -129,7 +133,7 @@ class GeoRuntimeTests(unittest.TestCase):
         defines = "\n".join(f"define COMM_{key} = {value};" for key, value in values["bgp_community"].items())
         functions = render(
             "filter.conf", bird_own_as_defines=["IANA_OWNAS", "DN42_OWNAS"],
-            iana={"enabled": True}, dn42={},
+            iana={"enabled": True}, dn42={"enabled": True},
         )
         config = f"""
 router id 192.0.2.1;

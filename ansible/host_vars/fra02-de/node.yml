@@ -3,6 +3,10 @@ node:
   tier: 2
   region: 2
   node_id: 2
+  geo:
+    region: EUROPE
+    country: GERMANY
+  wireguard_endpoint_host: ipv6.fra02-de.ecs.iyoroy-infra.top
   node_token: "d131"
   public_ipv6_prefix: "2a14:7583:f244::/48"
   peering:

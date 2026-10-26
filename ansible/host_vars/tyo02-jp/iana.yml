@@ -51,5 +51,4 @@ iana:
         - [IANA_OWNAS, COMM_FN_DENY_AS, 6939]
     - "{{ iana_global.anycast_net_v6 }}"
     extra_routes: []
-  own_net_v6: 2a14:7583:f220::/43
   router_id: 82.22.26.175

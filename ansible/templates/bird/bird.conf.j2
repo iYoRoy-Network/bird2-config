@@ -13,60 +13,36 @@ define GEO_REGION_{{ _name }} = {{ _code }};
 {% for _name, _code in geo_country.items() %}
 define GEO_COUNTRY_{{ _name }} = {{ _code }};
 {% endfor %}
-{% set pop_geo = node.geo | default(dn42 | default({})) %}
+{% set pop_geo = node.geo %}
 define POP_REGION = {{ pop_geo.region | geo_define(geo_region, 'region') }};
 define POP_COUNTRY = {{ pop_geo.country | geo_define(geo_country, 'country') }};
 {% if iana is defined and iana.enabled | default(false) %}
 define IANA_OWNAS                = {{ iana_global.own_as }};
 define IANA_ROUTER_ID            = {{ iana.router_id }};
 
-{% endif %}{% if dn42 is defined %}
+{% endif %}{% if dn42 is defined and dn42.enabled | default(false) %}
 define DN42_OWNAS                = {{ dn42_global.own_as }};
 
 define DN42_REGION               = POP_REGION;
 define DN42_COUNTRY              = POP_COUNTRY;
 
 {% endif %}{% if intra is not defined %}{% set intra = {} %}{% endif %}
-{% if modules.intra.enabled | default(false) %}
 define INTRA_CONFEDERATION_START = {{ intra_global.confederation_start }};
 define INTRA_CONFEDERATION_END   = {{ intra_global.confederation_end }};
+{% if intra.enabled | default(false) %}
 define INTRA_OWNAS               = {{ derived_intra_as }};
 define INTRA_ROUTERID            = {{ intra.router_id | default(derived_intra_loopback_v4) }};
 {% endif %}
 
 protocol device {
     scan time {{ bird.device_scan_time | default(10) }};
-}{% if bird.device_semicolon | default(false) %};{% endif %}
+}
 
 {% set iana_enabled = iana is defined and iana.enabled | default(false) %}
-{% set dn42_enabled = dn42 is defined %}
-{% set intra_enabled = modules.intra.enabled | default(false) %}
+{% set domain_files = {'iana': iana | default({}), 'dn42': dn42 | default({}), 'intra': intra | default({})} | bird_modules %}
 
-{# ── IANA includes (auto-derived, modules.iana.includes overrides) ── #}
-{% set _iana_upstream_count = (iana.upstreams4 | default([]) | length) + (iana.upstreams6 | default([]) | length) %}
 {% set _iana_has_peers = (iana.peers | default([]) | length) > 0 %}
 {% set _iana_has_downstreams = (iana.downstreams | default([]) | length) > 0 %}
-{% set _iana_has_ibgp = (iana.ibgp | default({})).enabled | default(false) %}
-{% set iana_default_includes = ['rpki.conf', 'filter.conf', 'static.conf'] %}
-{% if _iana_upstream_count > 0 %}{% set iana_default_includes = iana_default_includes + ['upstream.conf'] %}{% endif %}
-{% if _iana_has_peers %}{% set iana_default_includes = iana_default_includes + ['peer.conf'] %}{% endif %}
-{% if _iana_has_downstreams %}{% set iana_default_includes = iana_default_includes + ['downstream.conf'] %}{% endif %}
-{% if _iana_has_ibgp %}{% set iana_default_includes = iana_default_includes + ['ibgp.conf'] %}{% endif %}
-
-{# ── DN42 includes (auto-derived, modules.dn42.includes overrides) ── #}
-{% set _dn42_has_peers = (dn42.peers | default([]) | length) > 0 %}
-{% set _dn42_has_ix = (dn42.ix | default({})).sessions | default([]) | length > 0 %}
-{% set _dn42_inactive = modules.dn42.inactive_files | default([]) %}
-{% if 'rpki.conf' in _dn42_inactive %}
-{% set dn42_default_includes = ['filter.conf', 'flapalerted.conf', 'static.conf'] %}
-{% else %}
-{% set dn42_default_includes = ['rpki.conf', 'filter.conf', 'flapalerted.conf', 'static.conf'] %}
-{% endif %}
-{% if _dn42_has_peers %}{% set dn42_default_includes = dn42_default_includes + ['ebgp.conf'] %}{% endif %}
-{% if _dn42_has_ix %}{% set dn42_default_includes = dn42_default_includes + ['ix.conf'] %}{% endif %}
-
-{# ── Intra includes (auto-derived, modules.intra.includes overrides) ── #}
-{% set intra_default_includes = ['ibgp.conf', 'static.conf'] %}
 
 {# ── Render includes ── #}
 {% set root_includes = ['filter.conf'] %}
@@ -78,22 +54,10 @@ protocol device {
 include "{{ include }}";
 {% endfor %}
 
-{% if iana_enabled %}
-{% for include in modules.iana.includes | default(iana_default_includes) %}
-include "iana/{{ include }}";
+{% for domain, files in domain_files.items() %}
+{% for include in files %}
+include "{{ domain }}/{{ include }}";
 {% endfor %}
-{% endif %}
-
-{% if dn42_enabled %}
-{% for include in modules.dn42.includes | default(dn42_default_includes) %}
-include "dn42/{{ include }}";
 {% endfor %}
-{% endif %}
-
-{% if intra_enabled %}
-{% for include in modules.intra.includes | default(intra_default_includes) %}
-include "intra/{{ include }}";
-{% endfor %}
-{% endif %}
 
 include "kernel.conf";

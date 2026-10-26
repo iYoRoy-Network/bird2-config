@@ -12,7 +12,6 @@ bird_deploy:
 
 wireguard_deploy:
   enabled: false
-  local_root: '{{ inventory_dir }}/../wireguard'
   render_root: '{{ inventory_dir }}/../.rendered-wireguard'
   remote_dir: /etc/wireguard
   staging_parent: /var/tmp/bird2-configuration-wireguard

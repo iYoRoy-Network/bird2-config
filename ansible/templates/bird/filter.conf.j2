@@ -97,7 +97,7 @@ function {{ fn_name }}(int peer_as; int peer_region; int peer_country) -> bool {
 {% if iana is defined and iana.enabled | default(false) %}
 {{ export_controls('iana_apply_export', 'IANA_OWNAS') }}
 {% endif %}
-{% if dn42 is defined %}
+{% if dn42 is defined and dn42.enabled | default(false) %}
 {{ export_controls('dn42_apply_export', 'DN42_OWNAS') }}
 {% endif %}
 

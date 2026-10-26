@@ -1,6 +1,5 @@
 dn42:
-  region: ASIA_EAST
-  country: JAPAN
+  enabled: true
   flapalerted:
     neighbor:
       port: 1790

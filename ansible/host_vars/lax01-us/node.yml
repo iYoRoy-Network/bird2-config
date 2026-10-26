@@ -3,6 +3,10 @@ node:
   tier: 1
   region: 4
   node_id: 1
+  geo:
+    region: NA_WEST
+    country: UNITED_STATES
+  wireguard_endpoint_host: ipv4.lax-us.ecs.iyoroy-infra.top
   node_token: "de75"
   public_ipv6_prefix: "2a14:7583:f284::/48"
   peering:

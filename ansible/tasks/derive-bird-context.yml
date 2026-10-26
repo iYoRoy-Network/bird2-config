@@ -6,6 +6,7 @@
   ansible.builtin.set_fact:
     bird_own_as_defines: >-
       {{
-        (['DN42_OWNAS'] if dn42 is defined else [])
+        (['DN42_OWNAS'] if (dn42 is defined and dn42.enabled | default(false)) else [])
         + (['IANA_OWNAS'] if (iana is defined and iana.enabled | default(false)) else [])
       }}
+    bird_domain_files: "{{ {'iana': iana | default({}), 'dn42': dn42 | default({}), 'intra': intra | default({})} | bird_modules }}"

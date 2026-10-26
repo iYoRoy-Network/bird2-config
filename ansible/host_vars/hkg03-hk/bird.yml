@@ -1,11 +1,2 @@
 bird:
   log_syslog_all: true
-  device_scan_time: 10
-  device_semicolon: true
-modules:
-  iana:
-    enabled: true
-  dn42:
-    enabled: false
-  intra:
-    enabled: true

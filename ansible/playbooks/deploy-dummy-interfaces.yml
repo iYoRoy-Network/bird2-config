@@ -30,7 +30,7 @@
 
     - name: Determine whether overlay interface is needed
       ansible.builtin.set_fact:
-        _has_overlay: "{{ (dn42 is defined and (dn42.own_ip is defined or dn42.own_ipv6 is defined))
+        _has_overlay: "{{ (dn42 is defined and dn42.enabled | default(false) and (dn42.own_ip is defined or dn42.own_ipv6 is defined))
                           or (iana is defined and iana.enabled | default(false)) }}"
 
     # ── Render locally ──────────────────────────────────────────────────

@@ -1,8 +1,7 @@
 dn42:
+  enabled: true
   own_ip: 172.20.234.229
   own_ipv6: fd18:3e15:61d0::5
-  region: NA_WEST
-  country: UNITED_STATES
   flapalerted:
     local: 172.20.234.229
     neighbor:

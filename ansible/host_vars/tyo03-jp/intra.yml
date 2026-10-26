@@ -1,4 +1,5 @@
 intra:
+  enabled: true
   auto_confed_peers:
     - node: tyo01-jp
       interface: intra_tyo01

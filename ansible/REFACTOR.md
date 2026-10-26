@@ -16,3 +16,16 @@ if the host or service becomes unavailable; recovery results must be checked.
 Single-peer deployment modifies only its named peer, never other peer files.
 It requires the current shared BIRD functions to have been deployed separately.
 Production deployment is never part of the local verification workflow.
+
+## Configuration Ownership
+
+Each domain has one `enabled` flag under `iana`, `dn42`, or `intra`. Removed
+`modules.*` flags were not authoritative for IANA/DN42; migration preserves
+their previous effective behavior. `dn42.rpki.enabled` controls its RPKI module.
+The same `bird_modules` function selects both generated files and includes.
+
+PoP geography belongs to `node.geo`. Peer/session geography remains independent.
+`node.region` is the existing addressing/topology index, not a community region.
+`node.wireguard_endpoint_host` is the tunnel endpoint hostname, independent of
+SSH management inventory. Public node addresses use prefix + token exclusively.
+External aggregates remain explicit in `iana.static.advertise_routes`.

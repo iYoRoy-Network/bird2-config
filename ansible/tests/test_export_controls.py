@@ -19,7 +19,7 @@ class ExportControlTests(unittest.TestCase):
                 "enabled": True,
                 "downstreams": [{"export_policy": policy} for policy in ("default", "own_only", "reject")],
             },
-            "dn42": {},
+            "dn42": {"enabled": True},
             "intra": {},
             "derived_intra_loopback_v4": "100.64.1.1",
         }
@@ -254,6 +254,14 @@ class ExportControlTests(unittest.TestCase):
             "bgp_large_community.add((205369, 2, 100));",
             "if !iana_downstream_export_reject(6939, 52, 1392) then reject; accept;", False,
         )
+        for action, accepted in ((ibgp_export, True),
+                                 ("if !iana_peer_export_default(6939, 52, 1392) then reject; accept;", False)):
+            add_case(
+                "owned host route internal versus external",
+                "bgp_large_community.add((205369, 2, 100)); bgp_community.add((65535, 65281));",
+                action, accepted, prefix=f"2a14:7583:f224::{len(cases) + 1:x}/128",
+                present=("(205369, 2, 100)", "(65535,65281)"),
+            )
 
         for case in cases:
             action = case["action"]
@@ -303,7 +311,7 @@ roa6 table dn42_roa_flap_v6;
                     for case in cases:
                         with self.subTest(case=case["label"]):
                             output = subprocess.run(
-                                ["birdc", "-s", str(sock), "show", "route", "for", case["prefix"], "all"],
+                                ["birdc", "-s", str(sock), "show", "route", case["prefix"], "all"],
                                 capture_output=True, text=True,
                             ).stdout
                             if not case["accepted"]:

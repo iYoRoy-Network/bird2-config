@@ -1,8 +1,7 @@
 dn42:
+  enabled: true
   own_ip: 172.20.234.225
   own_ipv6: fd18:3e15:61d0::1
-  region: ASIA_EAST
-  country: HONG_KONG
   flapalerted:
     local: 172.20.234.225
     neighbor:

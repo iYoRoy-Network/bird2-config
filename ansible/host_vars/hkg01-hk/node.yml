@@ -3,6 +3,10 @@ node:
   tier: 9
   region: 1
   node_id: 2
+  geo:
+    region: ASIA_EAST
+    country: HONG_KONG
+  wireguard_endpoint_host: ipv4.hkg01-hk.ecs.iyoroy-infra.top
   node_token: "d576"
   public_ipv6_prefix: "2a14:7583:f224::/48"
   peering:

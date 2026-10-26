@@ -13,11 +13,12 @@
 {% set underlay_loopback_communities = underlay_loopback.communities | default(intra_global.underlay_loopback_communities | default([])) %}
 {% set dn42_overlay_communities = intra_global.dn42_overlay_route_communities %}
 {% set iana_overlay_communities = intra_global.iana_overlay_route_communities %}
-{% set overlay_default_communities = dn42_overlay_communities %}
+{% set overlay_default_communities = dn42_overlay_communities if 'DN42_OWNAS' in bird_own_as_defines else iana_overlay_communities %}
+{% if 'DN42_OWNAS' not in bird_own_as_defines %}{% set underlay_loopback_communities = overlay_default_communities %}{% endif %}
 protocol static intra_static_v4{
 {% if underlay_loopback_enabled %}    route {{ derived_intra_loopback_v4 }}/32 reject{
 {{ render_communities(underlay_loopback_communities) }}    };
-{% endif %}{% if dn42 is defined and dn42.own_ip is defined %}    route {{ dn42.own_ip }}/32 reject{
+{% endif %}{% if dn42 is defined and dn42.enabled | default(false) and dn42.own_ip is defined %}    route {{ dn42.own_ip }}/32 reject{
 {{ render_communities(overlay_default_communities) }}    };
 {% endif %}{% for route in intra_static.v4_routes | default([], true) %}    route {{ route.prefix }} reject{
 {{ render_communities(route.communities | default(overlay_default_communities)) }}    };
@@ -31,10 +32,10 @@ protocol static intra_static_v4{
 protocol static intra_static_v6{
 {% if underlay_loopback_enabled %}    route {{ derived_intra_loopback_v6 }}/128 reject{
 {{ render_communities(underlay_loopback_communities) }}    };
-{% endif %}{% if dn42 is defined and dn42.own_ipv6 is defined %}    route {{ dn42.own_ipv6 }}/128 reject{
+{% endif %}{% if dn42 is defined and dn42.enabled | default(false) and dn42.own_ipv6 is defined %}    route {{ dn42.own_ipv6 }}/128 reject{
 {{ render_communities(overlay_default_communities) }}    };
 {% endif %}{% if iana is defined and iana.enabled | default(false) %}
-    route {{ iana.own_ipv6 | default(derived_public_ipv6) }}/128 reject{
+    route {{ derived_public_ipv6 }}/128 reject{
 {{ render_communities(iana_overlay_communities) }}    };
 {% endif %}{% for route in intra_static.v6_routes | default([], true) %}    route {{ route.prefix }} reject{
 {{ render_communities(route.communities | default(overlay_default_communities)) }}    };

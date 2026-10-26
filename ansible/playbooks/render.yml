@@ -10,11 +10,11 @@
     - name: Derive node addressing variables
       ansible.builtin.include_tasks: ../tasks/derive-node-addressing.yml
 
-    - name: Derive enabled own-ASN define names
-      ansible.builtin.include_tasks: ../tasks/derive-bird-context.yml
-
     - name: Load DN42 peer definitions
       ansible.builtin.include_tasks: ../tasks/load-dn42-peers.yml
+
+    - name: Derive enabled domain files and defines
+      ansible.builtin.include_tasks: ../tasks/derive-bird-context.yml
 
     - name: Check optional BIRD secrets file
       delegate_to: localhost
@@ -86,22 +86,13 @@
         - filter.conf
         - kernel.conf
 
-    - name: Build DN42 module file list
-      ansible.builtin.set_fact:
-        dn42_module_files: >-
-          {{
-            (dn42_module_files | default(['rpki.conf','filter.conf','flapalerted.conf','static.conf']))
-            + (['ebgp.conf'] if (dn42.peers | default([]) | length) > 0 else [])
-            + (['ix.conf'] if (dn42.ix | default({})).sessions | default([]) | length > 0 else [])
-          }}
-
     - name: Render DN42 module files
       delegate_to: localhost
       ansible.builtin.template:
         src: "../templates/bird/dn42/{{ item }}.j2"
         dest: "{{ node_output_dir }}/dn42/{{ item }}"
         mode: "0644"
-      loop: "{{ (dn42_module_files + (modules.dn42.inactive_files | default([]))) | unique }}"
+      loop: "{{ bird_domain_files.dn42 }}"
 
     - name: Render DN42 peer sessions
       delegate_to: localhost
@@ -123,7 +114,7 @@
         src: "../templates/bird/intra/{{ item }}.j2"
         dest: "{{ node_output_dir }}/intra/{{ item }}"
         mode: "0644"
-      loop: "{{ intra_module_files | default(['ibgp.conf','static.conf']) }}"
+      loop: "{{ bird_domain_files.intra }}"
 
     - name: Render intra iBGP sessions
       delegate_to: localhost
@@ -143,7 +134,7 @@
         mode: "0644"
       diff: false
       no_log: true
-      loop: "{{ iana_module_files | default(['rpki.conf','filter.conf','static.conf','upstream.conf','peer.conf','downstream.conf','ibgp.conf']) }}"
+      loop: "{{ bird_domain_files.iana }}"
       when: iana.enabled | default(false)
     
     - name: Render IANA downstream AS-SET list generator

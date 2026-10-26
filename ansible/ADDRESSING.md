@@ -23,18 +23,17 @@ The prefix is an address allocation input, **not a route announcement**:
 
 No /48 route is generated from this field. External aggregate and anycast
 announcements remain explicitly controlled by `iana.static.advertise_routes`.
-The prefix does not change `node.region`, the /43 derivation, or geo communities.
+The prefix does not change `node.region`, external aggregates, or geo communities.
 
 Legacy nodes without `public_ipv6_prefix` retain the region-derived prefix.
-`iana.own_ipv6` remains a legacy full-address override in templates; operational
-nodes no longer set it, so it cannot mask changes to their prefix or token.
-`iana.own_net_v6` does not select the node address prefix.
+`iana.own_ipv6`, `iana.own_net_v6`, and the unused /43 derivation have been removed.
+DN42's `own_ipv6` remains its separately assigned node address.
 
 Changing a prefix/token changes both the interface address and the originated
 host route. Deploy network and BIRD updates together; rendering alone does not
-change a running node. The separate IANA iBGP template currently rejects routes
-longer than /48, so these host routes use intra-confederation sessions, not that
-template.
+change a running node. Both intra-confederation and IANA iBGP preserve owned
+host routes with internal identity. External IANA sessions still reject routes
+longer than /48 and routes carrying NO_EXPORT.
 
 ## Verification
 

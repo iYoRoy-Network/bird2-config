@@ -1,6 +1,7 @@
 dn42:
-  region: EUROPE
-  country: GERMANY
+  enabled: true
+  rpki:
+    enabled: false
   flapalerted:
     neighbor:
       port: 1790
