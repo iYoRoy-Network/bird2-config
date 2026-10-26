@@ -32,10 +32,10 @@ function iana_downstream_import_reject(int peer_region; int peer_country) {
 }
 {% endif %}
 {% if 'default' in ns.export_policies %}
-function iana_downstream_export_default(int peer_as) -> bool {
+function iana_downstream_export_default(int peer_as; int peer_region; int peer_country) -> bool {
     if !iana_filter_default_check() then return false;
     if !iana_downstream_check_community() then return false;
-    if !iana_apply_export(peer_as) then return false;
+    if !iana_apply_export(peer_as, peer_region, peer_country) then return false;
     remove_confederation_as();
     remove_internal_communities();
     remove_export_control_communities();
@@ -43,11 +43,11 @@ function iana_downstream_export_default(int peer_as) -> bool {
 }
 {% endif %}
 {% if 'own_only' in ns.export_policies %}
-function iana_downstream_export_own_only(int peer_as) -> bool {
+function iana_downstream_export_own_only(int peer_as; int peer_region; int peer_country) -> bool {
     if !iana_filter_default_check() then return false;
     if !iana_downstream_check_community() then return false;
     if !is_self_iana_v6() then return false;
-    if !iana_apply_export(peer_as) then return false;
+    if !iana_apply_export(peer_as, peer_region, peer_country) then return false;
     remove_confederation_as();
     remove_internal_communities();
     remove_export_control_communities();
@@ -55,7 +55,7 @@ function iana_downstream_export_own_only(int peer_as) -> bool {
 }
 {% endif %}
 {% if 'reject' in ns.export_policies %}
-function iana_downstream_export_reject(int peer_as) -> bool {
+function iana_downstream_export_reject(int peer_as; int peer_region; int peer_country) -> bool {
     return false;
 }
 {% endif %}
@@ -103,7 +103,7 @@ protocol bgp '{{ downstream.protocol }}' from iana_downstream{
             iana_downstream_import_{{ import_policy }}({{ downstream.geo | default({}) | geo_args(geo_region, geo_country) }});
         };
         export filter {
-            if !iana_downstream_export_{{ export_policy }}({{ downstream.neighbor.asn }}) then reject;
+            if !iana_downstream_export_{{ export_policy }}({{ downstream.neighbor.asn }}, {{ downstream.geo | default({}) | geo_args(geo_region, geo_country) }}) then reject;
             accept;
         };
     };

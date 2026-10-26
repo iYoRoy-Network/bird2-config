@@ -11,7 +11,7 @@ protocol bgp 'dn42_peer_{{ peer.asn }}{% if session.name != 'mp-bgp' %}_{{ sessi
 {% endif %}{% if session.extended_next_hop | default(false) %}    ipv4 {
         extended next hop;
         import filter { dn42_ebgp_import_v4({{ session_geo | geo_args(geo_region, geo_country) }}); };
-        export filter { if !dn42_ebgp_export_v4({{ peer.asn }}) then reject; accept; };
+        export filter { if !dn42_ebgp_export_v4({{ peer.asn }}, {{ session_geo | geo_args(geo_region, geo_country) }}) then reject; accept; };
     };
 {% elif 'ipv4' not in session.address_families %}    ipv4 {
         import none;
@@ -19,11 +19,11 @@ protocol bgp 'dn42_peer_{{ peer.asn }}{% if session.name != 'mp-bgp' %}_{{ sessi
     };
 {% else %}    ipv4 {
         import filter { dn42_ebgp_import_v4({{ session_geo | geo_args(geo_region, geo_country) }}); };
-        export filter { if !dn42_ebgp_export_v4({{ peer.asn }}) then reject; accept; };
+        export filter { if !dn42_ebgp_export_v4({{ peer.asn }}, {{ session_geo | geo_args(geo_region, geo_country) }}) then reject; accept; };
     };
 {% endif %}{% if 'ipv6' in session.address_families %}    ipv6 {
         import filter { dn42_ebgp_import_v6({{ session_geo | geo_args(geo_region, geo_country) }}); };
-        export filter { if !dn42_ebgp_export_v6({{ peer.asn }}) then reject; accept; };
+        export filter { if !dn42_ebgp_export_v6({{ peer.asn }}, {{ session_geo | geo_args(geo_region, geo_country) }}) then reject; accept; };
     };
 {% else %}    ipv6 {
         import none;
@@ -49,7 +49,7 @@ protocol bgp 'dn42_peer_{{ peer.asn }}' from dnpeers {
 {% endif %}{% if peer_extended_next_hop %}    ipv4 {
         extended next hop;
         import filter { dn42_ebgp_import_v4({{ session_geo | geo_args(geo_region, geo_country) }}); };
-        export filter { if !dn42_ebgp_export_v4({{ peer.asn }}) then reject; accept; };
+        export filter { if !dn42_ebgp_export_v4({{ peer.asn }}, {{ session_geo | geo_args(geo_region, geo_country) }}) then reject; accept; };
     };
 {% elif peer_dst_mode and peer_dst_is_ipv6 %}    ipv4 {
         import none;
@@ -57,11 +57,11 @@ protocol bgp 'dn42_peer_{{ peer.asn }}' from dnpeers {
     };
 {% else %}    ipv4 {
         import filter { dn42_ebgp_import_v4({{ session_geo | geo_args(geo_region, geo_country) }}); };
-        export filter { if !dn42_ebgp_export_v4({{ peer.asn }}) then reject; accept; };
+        export filter { if !dn42_ebgp_export_v4({{ peer.asn }}, {{ session_geo | geo_args(geo_region, geo_country) }}) then reject; accept; };
     };
 {% endif %}{% if peer_extended_next_hop or (peer_dst_mode and peer_dst_is_ipv6) %}    ipv6 {
         import filter { dn42_ebgp_import_v6({{ session_geo | geo_args(geo_region, geo_country) }}); };
-        export filter { if !dn42_ebgp_export_v6({{ peer.asn }}) then reject; accept; };
+        export filter { if !dn42_ebgp_export_v6({{ peer.asn }}, {{ session_geo | geo_args(geo_region, geo_country) }}) then reject; accept; };
     };
 {% else %}    ipv6 {
         import none;

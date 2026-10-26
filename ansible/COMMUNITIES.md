@@ -25,7 +25,8 @@ Existing NO_ADVERTISE restrictions still apply.
 The processing order is:
 
 1. Apply the existing domain and origin eligibility checks.
-2. Evaluate the domain's controls for the target ASN (deny/only, prepend, attach).
+2. Evaluate the domain's controls for the target ASN and geography (deny/only,
+   prepend, attach).
 3. Remove confederation ASNs and internal identity/geography markers.
 4. Remove implemented own-AS controls with `remove_export_control_communities()`.
 5. Accept the route.
@@ -35,6 +36,28 @@ Control cleanup enumerates registry entries with the `FN_ATTACH_`, `FN_DENY_`,
 an entire ASN namespace. Third-party standard/large communities, ordinary
 well-known communities, and unrecognized own-AS function codes pass through.
 Unimplemented controls are preserved but have no local effect.
+
+### Geographic Export Controls
+
+| Function | Argument | Behavior |
+| --- | --- | --- |
+| 650 | REGION | Deny export to peers in this region |
+| 651 | REGION | Only export to peers in listed regions |
+| 660 | COUNTRY | Deny export to peers in this country |
+| 661 | COUNTRY | Only export to peers in listed countries |
+
+The target location comes from the peer/session `geo` mapping, including DN42
+per-session overrides. Missing fields default to the local PoP's location.
+These checks do not use the route's 644/645 markers. Countries include the
+ISO numeric +1000 offset: `205369:660:1392` denies IANA export to Japan.
+
+Multiple values of the same `only` function form an allow list. Region,
+country, and ASN constraints must all pass, and a matching deny overrides an
+allow. Without a control of a given type, that type imposes no restriction.
+For example, `[IANA_OWNAS, COMM_FN_ONLY_REGION, GEO_REGION_ASIA_EAST]` together
+with `[IANA_OWNAS, COMM_FN_ONLY_COUNTRY, GEO_COUNTRY_JAPAN]` permits only peers
+whose configured region is East Asia and country is Japan, subject to the
+existing export eligibility checks.
 
 Runtime target matching uses `(own_as, function_code, peer_as) ~
 bgp_large_community`. Set literals with runtime parameters parsed successfully

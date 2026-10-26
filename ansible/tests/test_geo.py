@@ -75,6 +75,7 @@ class GeoRenderingTests(unittest.TestCase):
         }
         output = render("dn42/peer.conf", peer=peer)
         self.assertIn("dn42_ebgp_import_v6(GEO_REGION_ASIA_EAST, GEO_COUNTRY_JAPAN)", output)
+        self.assertIn("dn42_ebgp_export_v6(65000, GEO_REGION_ASIA_EAST, GEO_COUNTRY_JAPAN)", output)
         self.assertNotIn("dn42_ebgp_import_v4", output)
         self.assertIn("import none;", output)
 
@@ -96,6 +97,29 @@ class GeoRenderingTests(unittest.TestCase):
                         GEO.geo_define(peer["geo"][kind], values[f"geo_{kind}"], kind)
                 count += 1
         self.assertGreater(count, 0)
+
+    def test_external_export_uses_peer_geo(self):
+        session = {
+            "protocol": "test_session", "local": "2001:db8::1",
+            "neighbor": {"asn": 65000, "address": "2001:db8::2"},
+            "geo": {"region": "ASIA_EAST", "country": "JAPAN"},
+        }
+        for template, key, function in (
+            ("iana/peer.conf", "peers", "iana_peer_export_default"),
+            ("iana/downstream.conf", "downstreams", "iana_downstream_export_default"),
+            ("iana/upstream.conf", "upstreams4", "iana_upstream_export_default"),
+            ("iana/upstream.conf", "upstreams6", "iana_upstream_export_default"),
+        ):
+            with self.subTest(template=template, key=key):
+                output = render(template, iana={key: [session]})
+                self.assertIn(f"{function}(65000, GEO_REGION_ASIA_EAST, GEO_COUNTRY_JAPAN)", output)
+        output = render("dn42/ix.conf", dn42={"ix": {"sessions": [session]}}, derived_intra_loopback_v4="100.64.1.1")
+        for af in ("v4", "v6"):
+            self.assertIn(f"dn42_ix_export_{af}(65000, GEO_REGION_ASIA_EAST, GEO_COUNTRY_JAPAN)", output)
+        legacy = {"asn": 65000, "neighbor": {"address": "fe80::2"}, "bgp": {"extended_next_hop": True}}
+        output = render("dn42/peer.conf", peer=legacy)
+        for af in ("v4", "v6"):
+            self.assertIn(f"dn42_ebgp_export_{af}(65000, POP_REGION, POP_COUNTRY)", output)
 
 
 @unittest.skipUnless(shutil.which("bird") and shutil.which("birdc"), "BIRD binaries required")

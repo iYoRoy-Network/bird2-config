@@ -35,7 +35,12 @@ function {{ 'iana' if own_as == 'IANA_OWNAS' else 'dn42' }}_add_geo(int peer_reg
 #   D  650/651:<region>, 660/661:<country>, 670/671:<ASN>  deny / only
 #   E  691-696:<ASN>  prepend 1/2/3x to specified / non-specified ASes
 #   A  1xxxxx/2xxxxx  attach well-known community to specified/all / others
-function {{ fn_name }}(int peer_as) -> bool {
+function {{ fn_name }}(int peer_as; int peer_region; int peer_country) -> bool {
+{% for kind in ['REGION', 'COUNTRY'] %}
+    if ({{ own_as }}, COMM_FN_DENY_{{ kind }}, peer_{{ kind | lower }}) ~ bgp_large_community then return false;
+    if bgp_large_community ~ [({{ own_as }}, COMM_FN_ONLY_{{ kind }}, *)] &&
+       !(({{ own_as }}, COMM_FN_ONLY_{{ kind }}, peer_{{ kind | lower }}) ~ bgp_large_community) then return false;
+{% endfor %}
     if ({{ own_as }}, COMM_FN_DENY_AS, peer_as) ~ bgp_large_community then return false;
     if bgp_large_community ~ [({{ own_as }}, COMM_FN_ONLY_AS, *)] &&
        !(({{ own_as }}, COMM_FN_ONLY_AS, peer_as) ~ bgp_large_community) then return false;

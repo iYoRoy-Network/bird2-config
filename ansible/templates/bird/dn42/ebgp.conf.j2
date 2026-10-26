@@ -11,7 +11,7 @@ function dn42_ebgp_check_community(){
     return true;
 }
 
-function dn42_ebgp_export_v4(int peer_as) -> bool {
+function dn42_ebgp_export_v4(int peer_as; int peer_region; int peer_country) -> bool {
     if !(is_valid_dn42_network() && source ~ [RTS_STATIC, RTS_BGP]) then return false;
     if roa_check(dn42_roa_flap_v4, net, bgp_path.last) = ROA_INVALID then return false;
     if !dn42_ebgp_check_community() then return false;
@@ -19,14 +19,14 @@ function dn42_ebgp_export_v4(int peer_as) -> bool {
         bgp_community.add((GEO_COMM_AS, DN42_REGION));
         bgp_community.add((GEO_COMM_AS, DN42_COUNTRY));
     }
-    if !dn42_apply_export(peer_as) then return false;
+    if !dn42_apply_export(peer_as, peer_region, peer_country) then return false;
     remove_confederation_as();
     remove_internal_communities();
     remove_export_control_communities();
     return true;
 }
 
-function dn42_ebgp_export_v6(int peer_as) -> bool {
+function dn42_ebgp_export_v6(int peer_as; int peer_region; int peer_country) -> bool {
     if !(is_valid_dn42_network_v6() && source ~ [RTS_STATIC, RTS_BGP]) then return false;
     if roa_check(dn42_roa_flap_v6, net, bgp_path.last) = ROA_INVALID then return false;
     if !dn42_ebgp_check_community() then return false;
@@ -34,7 +34,7 @@ function dn42_ebgp_export_v6(int peer_as) -> bool {
         bgp_community.add((GEO_COMM_AS, DN42_REGION));
         bgp_community.add((GEO_COMM_AS, DN42_COUNTRY));
     }
-    if !dn42_apply_export(peer_as) then return false;
+    if !dn42_apply_export(peer_as, peer_region, peer_country) then return false;
     remove_confederation_as();
     remove_internal_communities();
     remove_export_control_communities();
@@ -78,7 +78,7 @@ template bgp dnpeers {
         };
 
         export filter {
-            if !dn42_ebgp_export_v4(0) then reject;
+            if !dn42_ebgp_export_v4(0, POP_REGION, POP_COUNTRY) then reject;
             accept;
         };
     };
@@ -89,7 +89,7 @@ template bgp dnpeers {
             dn42_ebgp_import_v6(POP_REGION, POP_COUNTRY);
         };
         export filter {
-            if !dn42_ebgp_export_v6(0) then reject;
+            if !dn42_ebgp_export_v6(0, POP_REGION, POP_COUNTRY) then reject;
             accept;
         };
     };

@@ -55,9 +55,26 @@ class ExportControlTests(unittest.TestCase):
                               else f"fdab:{len(cases) + 1:x}::/48")
                 add_case(
                     f"{policy}: {label}", base + body,
-                    f"if !{policy}(6939) then reject; accept;", accepted, present, absent, prefix,
+                    f"if !{policy}(6939, 52, 1392) then reject; accept;", accepted, present, absent, prefix,
                 )
 
+            for deny, only, target, elsewhere in ((650, 651, 52, 44), (660, 661, 1392, 1840)):
+                def tags(*entries):
+                    return "".join(f"bgp_large_community.add(({own}, {fn}, {value}));" for fn, value in entries)
+                case(f"deny geo {deny}", tags((deny, target)), False)
+                case(f"deny other geo {deny}", tags((deny, elsewhere)))
+                case(f"only geo {only}", tags((only, target)), absent=(f"({own}, {only}, {target})",))
+                case(f"only other geo {only}", tags((only, elsewhere)), False)
+                case(f"multiple allowed geo {only}", tags((only, elsewhere), (only, target)))
+                case(f"deny wins {deny}", tags((only, target), (deny, target)), False)
+                other = 205369 if own == 4242422024 else 4242422024
+                case(f"other domain geo {deny}", f"bgp_large_community.add(({other}, {deny}, {target}));")
+            case("combined geo allowed", tags((651, 52), (661, 1392)))
+            case("combined country mismatch", tags((651, 52), (661, 1840)), False)
+            case("combined region mismatch", tags((651, 44), (661, 1392)), False)
+            case("combined ASN mismatch", tags((651, 52), (661, 1392), (671, 65002)), False)
+            case("combined ASN allowed", tags((651, 52), (661, 1392), (671, 6939)))
+            case("route geo does not override peer", tags((644, 44), (645, 1840), (650, 44), (660, 1840)))
             case("deny target", f"bgp_large_community.add(({own}, 670, 6939));", False)
             case("only another AS", f"bgp_large_community.add(({own}, 671, 65002));", False)
             case("only target", f"bgp_large_community.add(({own}, 671, 6939));")
@@ -118,12 +135,14 @@ class ExportControlTests(unittest.TestCase):
             bgp_large_community.add((4242422024, 2, 100));
             bgp_large_community.add((4242422024, 644, 41));
             bgp_large_community.add((205369, 670, 6939));
+            bgp_large_community.add((205369, 650, 44));
+            bgp_large_community.add((205369, 661, 1392));
             bgp_large_community.add((4242422024, 691, 65002));
             bgp_large_community.add((65002, 670, 6939));
             """,
             "iana_peer_import_default(52, 1392);",
             present=("(205369, 2, 101)", "(205369, 644, 52)", "(205369, 645, 44)",
-                     "(205369, 670, 6939)",
+                     "(205369, 670, 6939)", "(205369, 650, 44)", "(205369, 661, 1392)",
                      "(4242422024, 691, 65002)", "(65002, 670, 6939)"),
             absent=("(205369, 2, 100)", "(4242422024, 2, 100)", "(4242422024, 644, 41)"),
         )
@@ -137,9 +156,12 @@ class ExportControlTests(unittest.TestCase):
             bgp_large_community.add((205369, 644, 52));
             bgp_large_community.add((205369, 645, 44));
             bgp_large_community.add((205369, 670, 6939));
+            bgp_large_community.add((205369, 651, 52));
+            bgp_large_community.add((205369, 660, 1840));
             """,
             "@intra_ibgp_export_full",
-            present=("(205369, 2, 100)", "(205369, 644, 52)", "(205369, 645, 44)", "(205369, 670, 6939)"),
+            present=("(205369, 2, 100)", "(205369, 644, 52)", "(205369, 645, 44)", "(205369, 670, 6939)",
+                     "(205369, 651, 52)", "(205369, 660, 1840)"),
         )
         ibgp = render("iana/ibgp.conf", **context)
         functions += "\n" + ibgp.partition("template bgp")[0]
@@ -158,7 +180,7 @@ class ExportControlTests(unittest.TestCase):
         add_case(
             "downstream reject policy",
             "bgp_large_community.add((205369, 2, 100));",
-            "if !iana_downstream_export_reject(6939) then reject; accept;", False,
+            "if !iana_downstream_export_reject(6939, 52, 1392) then reject; accept;", False,
         )
 
         for case in cases:

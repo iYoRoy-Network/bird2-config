@@ -13,10 +13,10 @@ function iana_upstream_check_community(){
     return true;
 }
 
-function iana_upstream_export_default(int peer_as) -> bool {
+function iana_upstream_export_default(int peer_as; int peer_region; int peer_country) -> bool {
     if !iana_filter_default_check() then return false;
     if !iana_upstream_check_community() then return false;
-    if !iana_apply_export(peer_as) then return false;
+    if !iana_apply_export(peer_as, peer_region, peer_country) then return false;
     remove_confederation_as();
     remove_internal_communities();
     remove_export_control_communities();
@@ -39,7 +39,7 @@ template bgp iana_upstream_v4 {
             accept;
         };
         export filter {
-            if !iana_upstream_export_default(0) then reject;
+            if !iana_upstream_export_default(0, POP_REGION, POP_COUNTRY) then reject;
             accept;
         };
         export limit 50;
@@ -64,7 +64,7 @@ template bgp iana_upstream_v6 {
             accept;
         };
         export filter {
-            if !iana_upstream_export_default(0) then reject;
+            if !iana_upstream_export_default(0, POP_REGION, POP_COUNTRY) then reject;
             accept;
         };
         export limit 50;
@@ -94,7 +94,7 @@ protocol bgp '{{ upstream.protocol }}' from iana_upstream_v4{
 {% endfor %}            accept;
         };
         export filter {
-            if !iana_upstream_export_default({{ upstream.neighbor.asn }}) then reject;
+            if !iana_upstream_export_default({{ upstream.neighbor.asn }}, {{ upstream.geo | default({}) | geo_args(geo_region, geo_country) }}) then reject;
             accept;
         };
         export limit 50;
@@ -123,7 +123,7 @@ protocol bgp '{{ upstream.protocol }}' from iana_upstream_v6{
 {% endfor %}            accept;
         };
         export filter {
-            if !iana_upstream_export_default({{ upstream.neighbor.asn }}) then reject;
+            if !iana_upstream_export_default({{ upstream.neighbor.asn }}, {{ upstream.geo | default({}) | geo_args(geo_region, geo_country) }}) then reject;
             accept;
         };
         export limit 50;
