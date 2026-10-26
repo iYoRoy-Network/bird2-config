@@ -4,6 +4,7 @@ node:
   region: 1
   node_id: 3
   node_token: "7d89"
+  public_ipv6_prefix: "2a14:7583:f224::/48"
   peering:
     enabled: true
     display_name: Hong Kong 02

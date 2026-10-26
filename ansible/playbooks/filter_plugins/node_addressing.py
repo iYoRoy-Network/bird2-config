@@ -8,6 +8,11 @@ of recomputing the derivation. This keeps working under ``--limit`` renders
 
 from __future__ import annotations
 
+from ipaddress import IPv6Address, IPv6Network
+import re
+
+from ansible.errors import AnsibleFilterError
+
 
 def intra_lla(node, intra_global):
     """Intra link-local address for a node's underlay interface."""
@@ -44,8 +49,18 @@ def intra_as(node, intra_global):
 
 
 def public_ipv6(node):
-    """Derived IANA public IPv6 address for a node."""
-    return "2a14:7583:f2%01x4::%s" % (node["region"] * 2, node["node_token"])
+    """Combine a node's address prefix with its final 16-bit token."""
+    prefix = node.get("public_ipv6_prefix", "2a14:7583:f2%01x4::/48" % (node["region"] * 2))
+    try:
+        network = IPv6Network(prefix)
+    except (ValueError, TypeError) as exc:
+        raise AnsibleFilterError("Invalid node.public_ipv6_prefix %r: %s" % (prefix, exc)) from exc
+    if not 48 <= network.prefixlen <= 112:
+        raise AnsibleFilterError("node.public_ipv6_prefix must be /48 through /112, leaving 16 token bits")
+    token = node["node_token"]
+    if not isinstance(token, str) or re.fullmatch(r"[0-9a-fA-F]{1,4}", token) is None:
+        raise AnsibleFilterError("node.node_token must be 1-4 hexadecimal digits")
+    return str(IPv6Address(int(network.network_address) | int(token, 16)))
 
 
 def public_net_v6(node):

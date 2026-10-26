@@ -4,5 +4,6 @@ node:
   region: 1
   node_id: 8
   node_token: "6f78"
+  public_ipv6_prefix: "2a14:7583:f228::/48"
   peering:
     enabled: false
