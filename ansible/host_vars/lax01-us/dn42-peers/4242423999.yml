@@ -1,4 +1,7 @@
 description: '@charliemoomoo https://hackmd.io/@cow/dn42-peering#Nodes'
+geo:
+  region: NA_WEST
+  country: UNITED_STATES
 asn: 4242423999
 wireguard:
   public_key: jhOukGNAKHI8Ivn8uI1TS25n5ho/rVlKFfenGmwCVlg=

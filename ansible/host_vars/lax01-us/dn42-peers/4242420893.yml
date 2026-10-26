@@ -1,4 +1,7 @@
 description: dn42admin@maiyun.me https://maiyun.me/contact-me.html
+geo:
+  region: NA_WEST
+  country: UNITED_STATES
 asn: 4242420893
 wireguard:
   public_key: 6BFCe8vi6R9magcs/BqZbSqblNNqR/jcrNt1E7/NDD8=

@@ -1,4 +1,7 @@
 description: 22024 https://jp42.kskb.eu.org/autopeer/action_page.php
+geo:
+  region: ASIA_EAST
+  country: JAPAN
 asn: 4242421817
 wireguard:
   public_key: LDtwAj4hsCOmZEnAcb2uzOH5FP1q43ploOoG/8tDeC4=

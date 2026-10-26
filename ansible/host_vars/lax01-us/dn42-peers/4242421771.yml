@@ -1,4 +1,7 @@
 description: '@messageleaf https://exploro.one/dn42'
+geo:
+  region: NA_WEST
+  country: UNITED_STATES
 asn: 4242421771
 wireguard:
   public_key: XC+KJ25WHrn6WxPYkiQOj1FPcaKgMRD4cCyxahqr1Ws=

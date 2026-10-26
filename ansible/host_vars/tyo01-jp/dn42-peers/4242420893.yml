@@ -1,4 +1,7 @@
 description: dn42admin@maiyun.me https://maiyun.me/contact-me.html
+geo:
+  region: ASIA_EAST
+  country: JAPAN
 asn: 4242420893
 wireguard:
   public_key: J5aq5AYRv/GHfr90mVEOPRCQeLInGS3mnSpckuyWt04=

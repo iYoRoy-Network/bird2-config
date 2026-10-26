@@ -1,4 +1,7 @@
 description: '@moohric https://www.mhr.hk/posts/dn42-peering/'
+geo:
+  region: NA_WEST
+  country: UNITED_STATES
 asn: 4242422279
 wireguard:
   public_key: WCVsWHNq+VeafZ7agkfkafZIoC/8oHF46D07PkOVljA=

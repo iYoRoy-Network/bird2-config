@@ -1,4 +1,7 @@
 description: https://suki.ink/dn42
+geo:
+  region: ASIA_EAST
+  country: JAPAN
 asn: 4242423332
 wireguard:
   public_key: O75R09ATSL6ND0430jDIaBVKfGeAWoS0c6yXxeJyLUs=

@@ -1,4 +1,7 @@
 description: https://dn42.routedbits.io/
+geo:
+  region: NA_WEST
+  country: UNITED_STATES
 asn: 4242420207
 wireguard:
   public_key: s4uGYMeLV30vO/Z3+c1qrg/YA1eIMRVFYUsZEGD1hH8=

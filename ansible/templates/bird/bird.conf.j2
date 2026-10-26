@@ -7,6 +7,15 @@ log syslog all;
 define COMM_{{ _name }} = {{ _value }};
 {% endfor %}
 define GEO_COMM_AS = {{ dn42_global.geo_comm_as }};
+{% for _name, _code in geo_region.items() %}
+define GEO_REGION_{{ _name }} = {{ _code }};
+{% endfor %}
+{% for _name, _code in geo_country.items() %}
+define GEO_COUNTRY_{{ _name }} = {{ _code }};
+{% endfor %}
+{% set pop_geo = node.geo | default(dn42 | default({})) %}
+define POP_REGION = {{ pop_geo.region | geo_define(geo_region, 'region') }};
+define POP_COUNTRY = {{ pop_geo.country | geo_define(geo_country, 'country') }};
 {% if iana is defined and iana.enabled | default(false) %}
 define IANA_OWNAS                = {{ iana_global.own_as }};
 define IANA_ROUTER_ID            = {{ iana.router_id }};
@@ -14,15 +23,8 @@ define IANA_ROUTER_ID            = {{ iana.router_id }};
 {% endif %}{% if dn42 is defined %}
 define DN42_OWNAS                = {{ dn42_global.own_as }};
 
-{% for _name, _code in geo_region.items() %}
-define GEO_REGION_{{ _name }} = {{ _code }};
-{% endfor %}
-{% for _name, _code in geo_country.items() %}
-define GEO_COUNTRY_{{ _name }} = {{ _code }};
-{% endfor %}
-
-define DN42_REGION               = {{ 'GEO_REGION_' ~ dn42.region if dn42.region is string else dn42.region }};
-define DN42_COUNTRY              = {{ 'GEO_COUNTRY_' ~ dn42.country if dn42.country is string else dn42.country }};
+define DN42_REGION               = POP_REGION;
+define DN42_COUNTRY              = POP_COUNTRY;
 
 {% endif %}{% if intra is not defined %}{% set intra = {} %}{% endif %}
 {% if modules.intra.enabled | default(false) %}

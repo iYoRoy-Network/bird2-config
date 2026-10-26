@@ -1,4 +1,7 @@
 description: https://blog.sherpherd.net/dn42.html
+geo:
+  region: ASIA_EAST
+  country: JAPAN
 asn: 4242423947
 wireguard:
   public_key: qwrsDI3bkHDOXUldYGJPSM3hTI7KqDpYbNMzKzB1Uko=

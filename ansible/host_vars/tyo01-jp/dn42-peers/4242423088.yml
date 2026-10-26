@@ -1,4 +1,7 @@
 description: https://peer.dn42.6700.cc
+geo:
+  region: ASIA_EAST
+  country: JAPAN
 asn: 4242423088
 wireguard:
   public_key: b3gUz8an2+wSCvXAwuxGR7AnxKDUqqQMd1+LASo93R0=

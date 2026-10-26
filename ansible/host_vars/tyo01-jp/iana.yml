@@ -8,6 +8,9 @@ iana:
   #     asn: 44324
   upstreams6:
   - protocol: iana_upstream_44324_v6
+    geo:
+      region: ASIA_EAST
+      country: JAPAN
     description: MoeDove
     neighbor:
       address: fc00:230::1
@@ -15,6 +18,9 @@ iana:
   downstreams: []
   peers:
   - protocol: iana_ix_203168
+    geo:
+      region: ASIA_EAST
+      country: JAPAN
     description: Protocol 7 IX
     local: 2602:f92a:1315::1d
     neighbor:

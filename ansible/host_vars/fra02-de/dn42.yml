@@ -18,3 +18,6 @@ dn42:
         asn: 4242422465
       ipv4:
         extended_next_hop: true
+      geo:
+        region: EUROPE
+        country: GERMANY

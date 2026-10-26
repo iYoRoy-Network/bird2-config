@@ -1,4 +1,7 @@
 description: https://iedon.net
+geo:
+  region: ASIA_EAST
+  country: JAPAN
 asn: 4242422189
 wireguard:
   public_key: u2ImAJn9ewce9YHN6HaqrR3Sr4Xsy5UaaJOLJ7gkSzs=

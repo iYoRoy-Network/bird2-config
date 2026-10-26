@@ -1,4 +1,7 @@
 description: '@messageleaf https://exploro.one/dn42'
+geo:
+  region: ASIA_EAST
+  country: JAPAN
 asn: 4242421771
 wireguard:
   public_key: 8dPYwTXeDyqtkONkmfVSmNli6I/k8Vc8hEWgC+ZWchw=

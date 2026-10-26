@@ -1,4 +1,7 @@
 description: '@imlonghao'
+geo:
+  region: ASIA_EAST
+  country: JAPAN
 asn: 4242421888
 wireguard:
   public_key: HND/VBClYdfCqAKGFmapwqOxg/KluPcv2u30rjD8+gk=

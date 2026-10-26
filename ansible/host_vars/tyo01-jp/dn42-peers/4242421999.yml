@@ -1,4 +1,7 @@
 description: https://luotianyi.eu/dn42/
+geo:
+  region: ASIA_EAST
+  country: JAPAN
 asn: 4242421999
 wireguard:
   public_key: vzCKl611U0MVeaIcNyb8gJgWk1p6HY6oHr1oE846Py8=

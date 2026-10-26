@@ -1,4 +1,7 @@
 description: '@Iridoideae'
+geo:
+  region: ASIA_EAST
+  country: JAPAN
 asn: 4242421023
 wireguard:
   public_key: pv0bwaUm/ppI7Yaoi7w0qrXX5EW7Qo2njTSNG19AHgM=

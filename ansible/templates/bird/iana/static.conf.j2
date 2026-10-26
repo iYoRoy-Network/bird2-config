@@ -16,6 +16,7 @@ protocol static iana_static_advertise{
     ipv6 {
         import filter{
             bgp_large_community.add((IANA_OWNAS,COMM_FN_IDENTIFY,COMM_ORIGIN_CUSTOMER));
+            iana_add_geo(POP_REGION, POP_COUNTRY);
             accept;
         };
         export none;

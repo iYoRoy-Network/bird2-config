@@ -12,11 +12,12 @@ function iana_peer_check_community(){
 
     return true;
 }
-function iana_peer_import_default() {
+function iana_peer_import_default(int peer_region; int peer_country) {
     if !iana_filter_default_check() then reject;
     remove_confederation_as();
     remove_identity_community();
     iana_peer_add_community();
+    iana_add_geo(peer_region, peer_country);
     accept;
 }
 function iana_peer_export_default() {
@@ -60,7 +61,7 @@ protocol bgp '{{ peer.protocol }}' from iana_peer{
                 reject;
             }
 {% endif %}
-            iana_peer_import_default();
+            iana_peer_import_default({{ peer.geo | default({}) | geo_args(geo_region, geo_country) }});
         };
         export filter {
             if !iana_peer_export_default() then reject;

@@ -1,4 +1,7 @@
 description: '@Grayowo'
+geo:
+  region: ASIA_EAST
+  country: JAPAN
 asn: 4242423101
 wireguard:
   public_key: 3jkhBO/nKqWH1M377OhTZbwAXnnquy+Ggj4UbGtP+R8=

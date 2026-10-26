@@ -1,4 +1,7 @@
 description: https://dn42.g-load.eu
+geo:
+  region: NA_WEST
+  country: UNITED_STATES
 asn: 4242423914
 wireguard:
   public_key: sLbzTRr2gfLFb24NPzDOpy8j09Y6zI+a7NkeVMdVSR8=

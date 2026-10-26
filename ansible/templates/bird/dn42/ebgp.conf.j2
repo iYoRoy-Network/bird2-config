@@ -39,6 +39,24 @@ function dn42_ebgp_export_v6(int peer_as) -> bool {
     return true;
 }
 
+{% for af in ['v4', 'v6'] %}
+function dn42_ebgp_import_{{ af }}(int peer_region; int peer_country) {
+    if {{ 'is_valid_dn42_network() && !is_self_dn42_net()' if af == 'v4' else 'is_valid_dn42_network_v6() && !is_self_dn42_net_v6()' }} then {
+        if roa_check({{ 'dn42_roa' if af == 'v4' else 'dn42_roa_v6' }}, net, bgp_path.last) != ROA_VALID then {
+            print "[dn42] ROA check failed for ", net, " ASN ", bgp_path.last;
+            reject;
+        }
+        bgp_local_pref = dn42_ebgp_calculate_priority();
+        remove_confederation_as();
+        remove_identity_community();
+        dn42_ebgp_add_community();
+        dn42_add_geo(peer_region, peer_country);
+        accept;
+    }
+    reject;
+}
+{% endfor %}
+
 {% if dn42.router_id is defined %}
 {% set dn42_router_id = dn42.router_id %}
 {% elif dn42.own_ip is defined %}
@@ -54,18 +72,7 @@ template bgp dnpeers {
     ipv4 {
         table master4;
         import filter {
-            if is_valid_dn42_network() && !is_self_dn42_net() then {
-                if (roa_check(dn42_roa, net, bgp_path.last) != ROA_VALID) then {
-                    print "[dn42] ROA check failed for ", net, " ASN ", bgp_path.last;
-                    reject;
-                }
-                bgp_local_pref = dn42_ebgp_calculate_priority(); 
-                remove_confederation_as();
-                remove_identity_community();
-                dn42_ebgp_add_community();
-                accept;
-            }
-            reject;
+            dn42_ebgp_import_v4(POP_REGION, POP_COUNTRY);
         };
 
         export filter {
@@ -77,18 +84,7 @@ template bgp dnpeers {
     ipv6 {
         table master6;
         import filter {
-            if is_valid_dn42_network_v6() && !is_self_dn42_net_v6() then {
-                if (roa_check(dn42_roa_v6, net, bgp_path.last) != ROA_VALID) then {
-                    print "[dn42] ROA check failed for ", net, " ASN ", bgp_path.last;
-                    reject;
-                }
-                bgp_local_pref = dn42_ebgp_calculate_priority(); 
-                remove_confederation_as();
-                remove_identity_community();
-                dn42_ebgp_add_community();
-                accept;
-            }
-            reject;
+            dn42_ebgp_import_v6(POP_REGION, POP_COUNTRY);
         };
         export filter {
             if !dn42_ebgp_export_v6(0) then reject;

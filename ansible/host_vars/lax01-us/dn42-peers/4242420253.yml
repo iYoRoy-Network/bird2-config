@@ -1,4 +1,7 @@
 description: 22024 creamlike1024@outlook.com https://blog.moe233.net/dn42/
+geo:
+  region: NA_WEST
+  country: UNITED_STATES
 asn: 4242420253
 wireguard:
   public_key: C3SneO68SmagisYQ3wi5tYI2R9g5xedKkB56Y7rtPUo=

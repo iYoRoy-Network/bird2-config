@@ -14,3 +14,6 @@ wireguard:
 lla: fe80::3377
 bgp:
   extended_next_hop: true
+geo:
+  region: ASIA_EAST
+  country: HONG_KONG

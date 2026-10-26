@@ -1,4 +1,7 @@
 description: http://dn42.lare.cc/
+geo:
+  region: ASIA_EAST
+  country: JAPAN
 asn: 4242423035
 wireguard:
   public_key: oTPdRylNhX2O80e6rLejT9Fwzo7KWKZ7a3PUF4G9oEM=

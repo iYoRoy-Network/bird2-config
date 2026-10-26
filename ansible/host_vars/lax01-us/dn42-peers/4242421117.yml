@@ -1,4 +1,7 @@
 description: '@antenna000 https://blog.yuyuko.com/post/7'
+geo:
+  region: NA_WEST
+  country: UNITED_STATES
 asn: 4242421117
 wireguard:
   public_key: PW/+rv0B8e4tUJ9j1TWscx1sl36WwhPh9adEqoM7Jic=

@@ -33,6 +33,7 @@ template bgp iana_upstream_v4 {
             remove_confederation_as();
             remove_identity_community();
             iana_upstream_add_community();
+            iana_add_geo(POP_REGION, POP_COUNTRY);
             accept;
         };
         export filter {
@@ -60,6 +61,7 @@ template bgp iana_upstream_v6 {
             remove_confederation_as();
             remove_identity_community();
             iana_upstream_add_community();
+            iana_add_geo(POP_REGION, POP_COUNTRY);
             accept;
         };
         export filter {
@@ -89,6 +91,7 @@ protocol bgp '{{ upstream.protocol }}' from iana_upstream_v4{
             remove_confederation_as();
             remove_identity_community();
             iana_upstream_add_community();
+            iana_add_geo({{ upstream.geo | default({}) | geo_args(geo_region, geo_country) }});
 {% for rewrite in upstream.next_hop_rewrites | default([]) %}            if bgp_next_hop = {{ rewrite.from }} then {
                 bgp_next_hop = {{ rewrite.to }};
             }
@@ -118,6 +121,7 @@ protocol bgp '{{ upstream.protocol }}' from iana_upstream_v6{
             remove_confederation_as();
             remove_identity_community();
             iana_upstream_add_community();
+            iana_add_geo({{ upstream.geo | default({}) | geo_args(geo_region, geo_country) }});
 {% for rewrite in upstream.next_hop_rewrites | default([]) %}            if bgp_next_hop = {{ rewrite.from }} then {
                 bgp_next_hop = {{ rewrite.to }};
             }

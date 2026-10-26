@@ -1,4 +1,7 @@
 description: '@temu_root https://dn42.fly.dev/'
+geo:
+  region: NA_WEST
+  country: UNITED_STATES
 asn: 4242421123
 wireguard:
   public_key: Z6OKJSR1sxMBgUd1uXEe/UxoBsOvRgbTnexy7z/ryUI=

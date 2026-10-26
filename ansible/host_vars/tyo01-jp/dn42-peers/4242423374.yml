@@ -1,4 +1,7 @@
 description: http://dn42.baka.pub/
+geo:
+  region: ASIA_EAST
+  country: JAPAN
 asn: 4242423374
 wireguard:
   public_key: N7iQzqWLPb6lpRlf7grQG6rEzQOvDZWkmsRDkRnniH0=

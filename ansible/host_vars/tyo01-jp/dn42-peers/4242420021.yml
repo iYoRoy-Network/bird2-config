@@ -1,4 +1,7 @@
 description: '@guanranwang https://blog.ny4.dev/'
+geo:
+  region: ASIA_EAST
+  country: JAPAN
 asn: 4242420021
 wireguard:
   public_key: KW+H2qK9aDiqoLwvmtLjJ6Sbndbcn4vnJpjT/xz89BE=

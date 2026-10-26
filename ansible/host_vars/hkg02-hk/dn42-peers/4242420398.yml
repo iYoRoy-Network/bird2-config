@@ -8,3 +8,6 @@ wireguard:
   listen_port: 20398
   endpoint: hkl.dn42.boletus.icu:22024
   fwmark: '4242'
+geo:
+  region: ASIA_EAST
+  country: HONG_KONG

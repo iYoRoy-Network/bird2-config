@@ -1,4 +1,7 @@
 asn: 4242421588
+geo:
+  region: ASIA_EAST
+  country: JAPAN
 description: https://www.chrismoos.com/dn42-peering/
 wireguard:
   public_key: unTYSat5YjkY+BY31Q9xLSfFhTUBvn3CiDCSZxbINVM=

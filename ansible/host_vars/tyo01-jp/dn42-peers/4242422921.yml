@@ -1,4 +1,7 @@
 description: '@AndyYan123'
+geo:
+  region: ASIA_EAST
+  country: JAPAN
 asn: 4242422921
 wireguard:
   public_key: nLyNhDOzsFUQ5LK5lrpHBlkKYkUzpzOm/p2iThlX3Dg=

@@ -1,4 +1,7 @@
 description: '@X01512'
+geo:
+  region: NA_WEST
+  country: UNITED_STATES
 asn: 4242420358
 wireguard:
   public_key: 7HzHyeA2M7yo/zVmc+e0zG+I7j2SnIx+7ZpXOca93mg=

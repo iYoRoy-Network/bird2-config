@@ -1,4 +1,7 @@
 description: https://peer.dn42.6700.cc
+geo:
+  region: NA_WEST
+  country: UNITED_STATES
 asn: 4242423088
 wireguard:
   public_key: QSAeFPotqFpF6fFe3CMrMjrpS5AL54AxWY2w1+Ot2Bo=

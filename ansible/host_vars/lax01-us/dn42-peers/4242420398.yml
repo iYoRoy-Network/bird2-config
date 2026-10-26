@@ -1,4 +1,7 @@
 description: '@opkgbot'
+geo:
+  region: NA_WEST
+  country: UNITED_STATES
 asn: 4242420398
 wireguard:
   public_key: oAPy0U2qVuSR8PyPLmVLEgWLBKrOq4kcLNLAOVZL10M=

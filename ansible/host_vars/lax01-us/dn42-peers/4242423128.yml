@@ -1,4 +1,7 @@
 description: '@WOW55999 https://dn42.gtio.de/'
+geo:
+  region: NA_WEST
+  country: UNITED_STATES
 asn: 4242423128
 wireguard:
   public_key: YwnQqLlObD7TrpGKz4qhHh5C6hatuxIU3zcdjXpYP00=

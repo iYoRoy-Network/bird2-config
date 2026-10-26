@@ -1,4 +1,7 @@
 description: '@Auride'
+geo:
+  region: NA_WEST
+  country: UNITED_STATES
 asn: 4242423310
 wireguard:
   public_key: qEffOA35Oe2IFUFXv7KTGGZ5SV3XmrM+IxTdzHEDmCg=

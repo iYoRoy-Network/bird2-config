@@ -1,4 +1,7 @@
 description: '@moenetdn42bot'
+geo:
+  region: ASIA_EAST
+  country: JAPAN
 asn: 4242420998
 wireguard:
   public_key: OkZGn8FGwUNuC9pt3kYIFeDNIx/wsGGEWikfOsBDFl8=

@@ -8,18 +8,27 @@ iana:
   #     asn: 44324
   upstreams6:
   - protocol: iana_upstream_44324_v6
+    geo:
+      region: ASIA_EAST
+      country: HONG_KONG
     description: MoeDove
     neighbor:
       address: fc00:32e0::1
       asn: 44324
   downstreams: 
   - protocol: iana_downstream_219489
+    geo:
+      region: ASIA_EAST
+      country: HONG_KONG
     local: fc00:32e0::3200:1
     neighbor:
       address: fc00:32e0::8800:1
       asn: 219489
     as_set: "AS219489"
   - protocol: iana_downstream_197817
+    geo:
+      region: ASIA_EAST
+      country: HONG_KONG
     local: fe80::21b:10ff:fe51:bc7b
     neighbor:
       address: fe80::2a3:a2ff:fe08:e14c
@@ -28,6 +37,9 @@ iana:
     as_set: "AS197817:AS-PARTNERS"
   peers:
   - protocol: iana_ix_140961_rs1
+    geo:
+      region: ASIA_EAST
+      country: HONG_KONG
     description: "ZXIX"
     local: 2406:840:1f:1000::20:5369:1
     neighbor:
@@ -36,6 +48,9 @@ iana:
     as_set: "AS-ZXIX"
     enforce_first_as: false
   - protocol: iana_ix_140961_rs2
+    geo:
+      region: ASIA_EAST
+      country: HONG_KONG
     description: "ZXIX"
     local: 2406:840:1f:1000::20:5369:1
     neighbor:
@@ -44,6 +59,9 @@ iana:
     as_set: "AS-ZXIX"
     enforce_first_as: false
   - protocol: iana_ix_203168
+    geo:
+      region: ASIA_EAST
+      country: HONG_KONG
     description: "AkaereIX"
     local: 2602:f92a:1315:2::34
     neighbor:
@@ -52,6 +70,9 @@ iana:
     as_set: "RADB::AS-JYL"
     enforce_first_as: false
   - protocol: iana_ix_24381
+    geo:
+      region: ASIA_EAST
+      country: HONG_KONG
     description: "BGP.Exchange"
     local: 2a0e:8f01:1000:16::140
     neighbor:

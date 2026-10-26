@@ -1,4 +1,7 @@
 description: '@Nuro_Atamashino'
+geo:
+  region: NA_WEST
+  country: UNITED_STATES
 asn: 4242420298
 wireguard:
   public_key: qp/KHe+/6jf3/Cvbkw5/0gtJih+HzhpxW0UnLXMEHiw=

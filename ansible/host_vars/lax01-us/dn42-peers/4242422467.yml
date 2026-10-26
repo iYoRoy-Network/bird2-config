@@ -1,4 +1,7 @@
 description: '@unstartdev https://unstartdev.eu.org/dn42'
+geo:
+  region: NA_WEST
+  country: UNITED_STATES
 asn: 4242422467
 wireguard:
   public_key: Nn73gI6XYCHxKWybWPwFgNQM8/s5R3UzN6VqutUC/3s=

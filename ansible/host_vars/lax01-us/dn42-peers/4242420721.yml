@@ -1,4 +1,7 @@
 description: https://anemone.moe/posts/dn42-quickstart/ fermata@h2o.moe
+geo:
+  region: NA_WEST
+  country: UNITED_STATES
 asn: 4242420721
 wireguard:
   public_key: HBn/8dyDkC8z4kY5tGZsG3d7iyyc8SWwl5c93po580w=

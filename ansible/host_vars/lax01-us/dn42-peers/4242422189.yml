@@ -1,4 +1,7 @@
 description: https://iedon.net
+geo:
+  region: NA_WEST
+  country: UNITED_STATES
 asn: 4242422189
 wireguard:
   public_key: DIw4TKAQelurK10Sh1qE6IiDKTqL1yciI5ItwBgcHFA=

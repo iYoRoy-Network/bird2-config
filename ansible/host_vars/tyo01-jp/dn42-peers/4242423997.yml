@@ -1,4 +1,7 @@
 description: '@Sm1rkBot https://blog.bitrate.top/dn42'
+geo:
+  region: ASIA_EAST
+  country: JAPAN
 asn: 4242423997
 wireguard:
   public_key: wsjN0FgfZBFzSZQ66biOkYRtyQWWMFvX3ICOwj70D0U=

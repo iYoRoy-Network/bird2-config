@@ -1,4 +1,7 @@
 description: '@cybercrushman'
+geo:
+  region: ASIA_EAST
+  country: JAPAN
 asn: 4242422289
 wireguard:
   public_key: iKsbvtsdrNwM130XGWvf621+BRuuQUmz1H9hlLCPEn4=

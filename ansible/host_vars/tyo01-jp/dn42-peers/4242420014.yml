@@ -1,4 +1,7 @@
 description: '@fx_net01'
+geo:
+  region: ASIA_EAST
+  country: JAPAN
 asn: 4242420014
 wireguard:
   public_key: RwS9qiSqkptO9QTje9stsxRD1CA/CR5HaDdNdPBydyU=

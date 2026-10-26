@@ -1,4 +1,7 @@
 description: '@Iridoideae'
+geo:
+  region: NA_WEST
+  country: UNITED_STATES
 asn: 4242421023
 wireguard:
   public_key: yHtmGTi6r9AtrSeTZyl2yce6nHdSVcc017VMI1s9HH8=

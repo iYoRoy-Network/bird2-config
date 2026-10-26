@@ -1,4 +1,7 @@
 description: '@daylilies https://daylily.network/dn42'
+geo:
+  region: NA_WEST
+  country: UNITED_STATES
 asn: 4242421919
 wireguard:
   public_key: yOt9PIXDa4pzAE+XMzDv7J+CYO2qf53fnF9MvLy4iQ8=

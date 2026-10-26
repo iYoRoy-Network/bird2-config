@@ -14,6 +14,17 @@ function remove_identity_community(){
 {% for own_as in bird_own_as_defines %}    bgp_large_community.delete([({{ own_as }}, COMM_FN_IDENTIFY, *)]);
 {% endfor %}}
 
+{% for own_as in bird_own_as_defines %}
+# Rebuild this domain's ingress geo from the configured peering endpoints.
+function {{ 'iana' if own_as == 'IANA_OWNAS' else 'dn42' }}_add_geo(int peer_region; int peer_country) {
+    bgp_large_community.delete([({{ own_as }}, COMM_FN_GEO_SRC, *), ({{ own_as }}, COMM_FN_GEO_DST, *)]);
+    bgp_large_community.add(({{ own_as }}, COMM_FN_GEO_SRC, peer_region));
+    bgp_large_community.add(({{ own_as }}, COMM_FN_GEO_SRC, peer_country));
+    bgp_large_community.add(({{ own_as }}, COMM_FN_GEO_DST, POP_REGION));
+    bgp_large_community.add(({{ own_as }}, COMM_FN_GEO_DST, POP_COUNTRY));
+}
+{% endfor %}
+
 {% macro export_controls(fn_name, own_as) -%}
 # Apply the communities.csv export controls for a route exported to `peer_as`.
 # Per-domain ({{ own_as }}) because BIRD set literals allow at most one runtime

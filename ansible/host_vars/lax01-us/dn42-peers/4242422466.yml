@@ -1,4 +1,7 @@
 description: '@SessX6cf https://dn42.xhustudio.eu.org/peering.html'
+geo:
+  region: NA_WEST
+  country: UNITED_STATES
 asn: 4242422466
 wireguard:
   public_key: tA6SZZYpCdr4zkkk2pCpuDDiyxcHIsksOhwWnzLIVw8=

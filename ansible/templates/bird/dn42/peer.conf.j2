@@ -1,6 +1,7 @@
 {% set peer_bgp = peer.bgp | default({}) %}
 {% if peer_bgp.sessions is defined and peer_bgp.sessions | length > 0 %}
 {% for session in peer_bgp.sessions %}
+{% set session_geo = (peer.geo | default({})) | combine(session.geo | default({})) %}
 protocol bgp 'dn42_peer_{{ peer.asn }}{% if session.name != 'mp-bgp' %}_{{ session.name }}{% endif %}' from dnpeers {
 {% if peer.description is defined and peer.description is not none %}    description "{{ peer.description | replace('\\', '\\\\') | replace('"', '\\"') }}";
 {% endif %}{% if session.transport == 'ipv6_link_local' %}    direct;
@@ -9,6 +10,7 @@ protocol bgp 'dn42_peer_{{ peer.asn }}{% if session.name != 'mp-bgp' %}_{{ sessi
     source address {{ session.source }};
 {% endif %}{% if session.extended_next_hop | default(false) %}    ipv4 {
         extended next hop;
+        import filter { dn42_ebgp_import_v4({{ session_geo | geo_args(geo_region, geo_country) }}); };
         export filter { if !dn42_ebgp_export_v4({{ peer.asn }}) then reject; accept; };
     };
 {% elif 'ipv4' not in session.address_families %}    ipv4 {
@@ -16,9 +18,11 @@ protocol bgp 'dn42_peer_{{ peer.asn }}{% if session.name != 'mp-bgp' %}_{{ sessi
         export none;
     };
 {% else %}    ipv4 {
+        import filter { dn42_ebgp_import_v4({{ session_geo | geo_args(geo_region, geo_country) }}); };
         export filter { if !dn42_ebgp_export_v4({{ peer.asn }}) then reject; accept; };
     };
 {% endif %}{% if 'ipv6' in session.address_families %}    ipv6 {
+        import filter { dn42_ebgp_import_v6({{ session_geo | geo_args(geo_region, geo_country) }}); };
         export filter { if !dn42_ebgp_export_v6({{ peer.asn }}) then reject; accept; };
     };
 {% else %}    ipv6 {
@@ -28,6 +32,7 @@ protocol bgp 'dn42_peer_{{ peer.asn }}{% if session.name != 'mp-bgp' %}_{{ sessi
 {% endif %}};
 {% endfor %}
 {% else %}
+{% set session_geo = peer.geo | default({}) %}
 {% set peer_interface = peer.neighbor.interface | default(peer.wireguard.interface | default('dn42_' ~ peer.asn)) %}
 {% set peer_lla = peer.lla | default(peer.neighbor.address) %}
 {% set peer_dst_mode = peer.dst is defined and peer.src is defined %}
@@ -43,6 +48,7 @@ protocol bgp 'dn42_peer_{{ peer.asn }}' from dnpeers {
 {% endif %}    neighbor {{ peer_lla }}{% if peer_interface %} % '{{ peer_interface }}'{% endif %} as {{ peer.asn }}{% if peer.neighbor.port is defined %} port {{ peer.neighbor.port }}{% endif %};
 {% endif %}{% if peer_extended_next_hop %}    ipv4 {
         extended next hop;
+        import filter { dn42_ebgp_import_v4({{ session_geo | geo_args(geo_region, geo_country) }}); };
         export filter { if !dn42_ebgp_export_v4({{ peer.asn }}) then reject; accept; };
     };
 {% elif peer_dst_mode and peer_dst_is_ipv6 %}    ipv4 {
@@ -50,9 +56,11 @@ protocol bgp 'dn42_peer_{{ peer.asn }}' from dnpeers {
         export none;
     };
 {% else %}    ipv4 {
+        import filter { dn42_ebgp_import_v4({{ session_geo | geo_args(geo_region, geo_country) }}); };
         export filter { if !dn42_ebgp_export_v4({{ peer.asn }}) then reject; accept; };
     };
 {% endif %}{% if peer_extended_next_hop or (peer_dst_mode and peer_dst_is_ipv6) %}    ipv6 {
+        import filter { dn42_ebgp_import_v6({{ session_geo | geo_args(geo_region, geo_country) }}); };
         export filter { if !dn42_ebgp_export_v6({{ peer.asn }}) then reject; accept; };
     };
 {% else %}    ipv6 {

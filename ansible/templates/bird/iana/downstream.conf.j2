@@ -16,17 +16,18 @@ function iana_downstream_check_community(){
     return true;
 }
 {% if 'default' in ns.import_policies %}
-function iana_downstream_import_default() {
+function iana_downstream_import_default(int peer_region; int peer_country) {
     if !iana_filter_default_check() then reject;
     if is_self_iana_v6() then reject;
     remove_confederation_as();
     remove_identity_community();
     iana_downstream_add_community();
+    iana_add_geo(peer_region, peer_country);
     accept;
 }
 {% endif %}
 {% if 'reject' in ns.import_policies %}
-function iana_downstream_import_reject() {
+function iana_downstream_import_reject(int peer_region; int peer_country) {
     reject;
 }
 {% endif %}
@@ -95,7 +96,7 @@ protocol bgp '{{ downstream.protocol }}' from iana_downstream{
                 reject;
             }
 {% endif %}
-            iana_downstream_import_{{ import_policy }}();
+            iana_downstream_import_{{ import_policy }}({{ downstream.geo | default({}) | geo_args(geo_region, geo_country) }});
         };
         export filter {
             if !iana_downstream_export_{{ export_policy }}() then reject;

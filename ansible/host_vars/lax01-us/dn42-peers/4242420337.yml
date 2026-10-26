@@ -1,4 +1,7 @@
 description: '@zxxwdd'
+geo:
+  region: NA_WEST
+  country: UNITED_STATES
 asn: 4242420337
 wireguard:
   public_key: QK813SDMiaIhfBw9VOkpTCgQSLdUNFDmSphymv5c7To=

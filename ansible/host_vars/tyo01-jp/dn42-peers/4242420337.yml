@@ -1,4 +1,7 @@
 description: '@zxxwdd'
+geo:
+  region: ASIA_EAST
+  country: JAPAN
 asn: 4242420337
 wireguard:
   public_key: xZBEeAO1btrRvU7cpXTBqaw8CZsmxrfB0005OgljtmU=

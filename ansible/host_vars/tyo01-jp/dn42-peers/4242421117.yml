@@ -1,4 +1,7 @@
 description: '@antenna000 https://blog.yuyuko.com/post/7'
+geo:
+  region: ASIA_EAST
+  country: JAPAN
 asn: 4242421117
 wireguard:
   public_key: vZXB25Od9elWU4RKWp42MWNJrNtxJFgdmBkyYH/8Sj8=

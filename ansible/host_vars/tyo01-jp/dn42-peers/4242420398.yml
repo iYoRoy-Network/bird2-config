@@ -1,4 +1,7 @@
 description: '@opkgbot'
+geo:
+  region: ASIA_EAST
+  country: JAPAN
 asn: 4242420398
 wireguard:
   public_key: QQecM/0eCbRu5TNdyRxGpJTCo6aGolMb0kZAqLH5Oho=

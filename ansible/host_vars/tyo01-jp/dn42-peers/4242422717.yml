@@ -1,4 +1,7 @@
 description: 23746 https://jp42.whojk.com/autopeer/action_page.php
+geo:
+  region: ASIA_EAST
+  country: JAPAN
 asn: 4242422717
 wireguard:
   public_key: Fw+pNtP7sPbrUMI2YTFcf5Fr1vtuuJoAmSTDd/ak5TU=

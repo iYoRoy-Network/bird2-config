@@ -7,11 +7,12 @@
 #   FN_*      function code — the middle field of <ASN>:<fn>:<arg>
 #   ORIGIN_*  origin value  — the arg of <ASN>:<FN_IDENTIFY>:<arg>
 #   WK_*      well-known value — the arg of <ASN>:<FN_WELLKNOWN>:<arg>
-# Function codes for the not-yet-implemented communities.csv features (geo
-# export control 644/645/650-661, prepend 691-708, ...) are added here when
-# those features land.
+# Function codes for not-yet-implemented communities.csv features (geo
+# export control 650-661 and prepend 697-708) are added when they land.
 bgp_community:
   FN_IDENTIFY: 2
+  FN_GEO_SRC: 644
+  FN_GEO_DST: 645
   FN_ATTACH_BLACKHOLE: 100666
   FN_ATTACH_BLACKHOLE_OTHERS: 200666
   FN_ATTACH_NO_EXPORT: 165281

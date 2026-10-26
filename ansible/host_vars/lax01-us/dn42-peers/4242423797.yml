@@ -1,4 +1,7 @@
 description: x@badaimweeb.me
+geo:
+  region: NA_WEST
+  country: UNITED_STATES
 asn: 4242423797
 wireguard:
   public_key: 4RtBDlHlTLec0ThvkGKjwiyuDk0YspugIMHeUdaNZmE=

@@ -1,4 +1,7 @@
 description: https://dn42.kskb.eu.org/
+geo:
+  region: NA_WEST
+  country: UNITED_STATES
 asn: 4242421817
 wireguard:
   public_key: dZzVdXbQPnWPpHk8QfW/p+MfGzAkMBuWpxEIXzQCggY=

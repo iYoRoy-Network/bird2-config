@@ -1,4 +1,7 @@
 description: '@lyc8503 http://blog.lyc8503.net/'
+geo:
+  region: NA_WEST
+  country: UNITED_STATES
 asn: 4242420167
 wireguard:
   public_key: IRpAYNTZg1YKumLqOstDOLh6iJKAwQEKC5YDFPb2Bm4=
