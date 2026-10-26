@@ -3,15 +3,19 @@ function remove_confederation_as() {
     bgp_path.delete([4233770000..4233779999]);
 }
 
-function remove_private_community(){
-{% for own_as in bird_own_as_defines %}    bgp_large_community.delete([({{ own_as }}, *, *)]);
+# Untrusted external input must not supply our internal identity or geo.
+# Do not call this on internal sessions: their ingress markers must survive.
+function remove_internal_communities(){
+{% for own_as in bird_own_as_defines %}    bgp_large_community.delete([({{ own_as }}, COMM_FN_IDENTIFY, *), ({{ own_as }}, COMM_FN_GEO_SRC, *), ({{ own_as }}, COMM_FN_GEO_DST, *)]);
 {% endfor %}}
 
-# Strip only the internal identity marker (ASN, FN_IDENTIFY, *) so that
-# control communities injected by peers/customers survive for our own
-# export logic to act on.
-function remove_identity_community(){
-{% for own_as in bird_own_as_defines %}    bgp_large_community.delete([({{ own_as }}, COMM_FN_IDENTIFY, *)]);
+# Strip only the controls implemented here, after the export actions run.
+# Foreign communities and unrecognized own-AS function codes pass through.
+function remove_export_control_communities(){
+{% for own_as in bird_own_as_defines %}
+{% for name in bgp_community if name.startswith(('FN_ATTACH_', 'FN_DENY_', 'FN_ONLY_', 'FN_PREPEND_')) %}
+    bgp_large_community.delete([({{ own_as }}, COMM_{{ name }}, *)]);
+{% endfor %}
 {% endfor %}}
 
 {% for own_as in bird_own_as_defines %}
@@ -26,44 +30,43 @@ function {{ 'iana' if own_as == 'IANA_OWNAS' else 'dn42' }}_add_geo(int peer_reg
 {% endfor %}
 
 {% macro export_controls(fn_name, own_as) -%}
-# Apply the communities.csv export controls for a route exported to `peer_as`.
-# Per-domain ({{ own_as }}) because BIRD set literals allow at most one runtime
-# variable per tuple, so the ASN must stay a literal define.
-#   D  670/671:<ASN>  deny / only export to an AS
+# Apply export controls using the target peer's ASN and endpoint geography.
+# Match runtime arguments as single tuples; keep sets for constant wildcards.
+#   D  650/651:<region>, 660/661:<country>, 670/671:<ASN>  deny / only
 #   E  691-696:<ASN>  prepend 1/2/3x to specified / non-specified ASes
 #   A  1xxxxx/2xxxxx  attach well-known community to specified/all / others
 function {{ fn_name }}(int peer_as) -> bool {
-    if bgp_large_community ~ [({{ own_as }}, COMM_FN_DENY_AS, peer_as)] then return false;
+    if ({{ own_as }}, COMM_FN_DENY_AS, peer_as) ~ bgp_large_community then return false;
     if bgp_large_community ~ [({{ own_as }}, COMM_FN_ONLY_AS, *)] &&
-       !(bgp_large_community ~ [({{ own_as }}, COMM_FN_ONLY_AS, peer_as)]) then return false;
+       !(({{ own_as }}, COMM_FN_ONLY_AS, peer_as) ~ bgp_large_community) then return false;
 
-    if bgp_large_community ~ [({{ own_as }}, COMM_FN_PREPEND_AS_1, peer_as)] then bgp_path.prepend({{ own_as }});
-    if bgp_large_community ~ [({{ own_as }}, COMM_FN_PREPEND_AS_2, peer_as)] then { bgp_path.prepend({{ own_as }}); bgp_path.prepend({{ own_as }}); }
-    if bgp_large_community ~ [({{ own_as }}, COMM_FN_PREPEND_AS_3, peer_as)] then { bgp_path.prepend({{ own_as }}); bgp_path.prepend({{ own_as }}); bgp_path.prepend({{ own_as }}); }
+    if ({{ own_as }}, COMM_FN_PREPEND_AS_1, peer_as) ~ bgp_large_community then bgp_path.prepend({{ own_as }});
+    if ({{ own_as }}, COMM_FN_PREPEND_AS_2, peer_as) ~ bgp_large_community then { bgp_path.prepend({{ own_as }}); bgp_path.prepend({{ own_as }}); }
+    if ({{ own_as }}, COMM_FN_PREPEND_AS_3, peer_as) ~ bgp_large_community then { bgp_path.prepend({{ own_as }}); bgp_path.prepend({{ own_as }}); bgp_path.prepend({{ own_as }}); }
     if bgp_large_community ~ [({{ own_as }}, COMM_FN_PREPEND_AS_OTHERS_1, *)] &&
-       !(bgp_large_community ~ [({{ own_as }}, COMM_FN_PREPEND_AS_OTHERS_1, peer_as)]) then bgp_path.prepend({{ own_as }});
+       !(({{ own_as }}, COMM_FN_PREPEND_AS_OTHERS_1, peer_as) ~ bgp_large_community) then bgp_path.prepend({{ own_as }});
     if bgp_large_community ~ [({{ own_as }}, COMM_FN_PREPEND_AS_OTHERS_2, *)] &&
-       !(bgp_large_community ~ [({{ own_as }}, COMM_FN_PREPEND_AS_OTHERS_2, peer_as)]) then { bgp_path.prepend({{ own_as }}); bgp_path.prepend({{ own_as }}); }
+       !(({{ own_as }}, COMM_FN_PREPEND_AS_OTHERS_2, peer_as) ~ bgp_large_community) then { bgp_path.prepend({{ own_as }}); bgp_path.prepend({{ own_as }}); }
     if bgp_large_community ~ [({{ own_as }}, COMM_FN_PREPEND_AS_OTHERS_3, *)] &&
-       !(bgp_large_community ~ [({{ own_as }}, COMM_FN_PREPEND_AS_OTHERS_3, peer_as)]) then { bgp_path.prepend({{ own_as }}); bgp_path.prepend({{ own_as }}); bgp_path.prepend({{ own_as }}); }
+       !(({{ own_as }}, COMM_FN_PREPEND_AS_OTHERS_3, peer_as) ~ bgp_large_community) then { bgp_path.prepend({{ own_as }}); bgp_path.prepend({{ own_as }}); bgp_path.prepend({{ own_as }}); }
 
     if bgp_large_community ~ [({{ own_as }}, COMM_FN_ATTACH_BLACKHOLE, 0)] ||
-       bgp_large_community ~ [({{ own_as }}, COMM_FN_ATTACH_BLACKHOLE, peer_as)] then
+       ({{ own_as }}, COMM_FN_ATTACH_BLACKHOLE, peer_as) ~ bgp_large_community then
         bgp_community.add((COMM_FN_WELLKNOWN, COMM_WK_BLACKHOLE));
     if bgp_large_community ~ [({{ own_as }}, COMM_FN_ATTACH_NO_EXPORT, 0)] ||
-       bgp_large_community ~ [({{ own_as }}, COMM_FN_ATTACH_NO_EXPORT, peer_as)] then
+       ({{ own_as }}, COMM_FN_ATTACH_NO_EXPORT, peer_as) ~ bgp_large_community then
         bgp_community.add((COMM_FN_WELLKNOWN, COMM_WK_NO_EXPORT));
     if bgp_large_community ~ [({{ own_as }}, COMM_FN_ATTACH_NO_ADVERTISE, 0)] ||
-       bgp_large_community ~ [({{ own_as }}, COMM_FN_ATTACH_NO_ADVERTISE, peer_as)] then
+       ({{ own_as }}, COMM_FN_ATTACH_NO_ADVERTISE, peer_as) ~ bgp_large_community then
         bgp_community.add((COMM_FN_WELLKNOWN, COMM_WK_NO_ADVERTISE));
     if bgp_large_community ~ [({{ own_as }}, COMM_FN_ATTACH_BLACKHOLE_OTHERS, *)] &&
-       !(bgp_large_community ~ [({{ own_as }}, COMM_FN_ATTACH_BLACKHOLE_OTHERS, peer_as)]) then
+       !(({{ own_as }}, COMM_FN_ATTACH_BLACKHOLE_OTHERS, peer_as) ~ bgp_large_community) then
         bgp_community.add((COMM_FN_WELLKNOWN, COMM_WK_BLACKHOLE));
     if bgp_large_community ~ [({{ own_as }}, COMM_FN_ATTACH_NO_EXPORT_OTHERS, *)] &&
-       !(bgp_large_community ~ [({{ own_as }}, COMM_FN_ATTACH_NO_EXPORT_OTHERS, peer_as)]) then
+       !(({{ own_as }}, COMM_FN_ATTACH_NO_EXPORT_OTHERS, peer_as) ~ bgp_large_community) then
         bgp_community.add((COMM_FN_WELLKNOWN, COMM_WK_NO_EXPORT));
     if bgp_large_community ~ [({{ own_as }}, COMM_FN_ATTACH_NO_ADVERTISE_OTHERS, *)] &&
-       !(bgp_large_community ~ [({{ own_as }}, COMM_FN_ATTACH_NO_ADVERTISE_OTHERS, peer_as)]) then
+       !(({{ own_as }}, COMM_FN_ATTACH_NO_ADVERTISE_OTHERS, peer_as) ~ bgp_large_community) then
         bgp_community.add((COMM_FN_WELLKNOWN, COMM_WK_NO_ADVERTISE));
 
     return true;

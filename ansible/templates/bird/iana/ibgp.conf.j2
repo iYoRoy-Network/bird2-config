@@ -26,7 +26,6 @@ template bgp iana_ibgp {
             if !iana_filter_default_check() then reject;
             if !iana_ibgp_check_community() then reject;
             remove_confederation_as();
-            remove_identity_community();
             accept;
         };
         next hop self;

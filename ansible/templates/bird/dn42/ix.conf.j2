@@ -23,7 +23,8 @@ function dn42_ix_export_v4(int peer_as) -> bool {
     }
     if !dn42_apply_export(peer_as) then return false;
     remove_confederation_as();
-    remove_private_community();
+    remove_internal_communities();
+    remove_export_control_communities();
     return true;
 }
 
@@ -37,7 +38,8 @@ function dn42_ix_export_v6(int peer_as) -> bool {
     }
     if !dn42_apply_export(peer_as) then return false;
     remove_confederation_as();
-    remove_private_community();
+    remove_internal_communities();
+    remove_export_control_communities();
     return true;
 }
 
@@ -46,7 +48,7 @@ function dn42_ix_import_{{ af }}(int peer_region; int peer_country) {
     if {{ 'is_valid_dn42_network() && !is_self_dn42_net()' if af == 'v4' else 'is_valid_dn42_network_v6() && !is_self_dn42_net_v6()' }} then {
         bgp_local_pref = dn42_ebgp_calculate_priority();
         remove_confederation_as();
-        remove_identity_community();
+        remove_internal_communities();
         dn42_ix_add_community();
         dn42_add_geo(peer_region, peer_country);
         accept;

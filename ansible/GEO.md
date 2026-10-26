@@ -13,8 +13,8 @@ On external BGP import, each domain replaces its own geography communities:
 
 These describe the peering endpoints, not the prefix registration country or
 the ASN's headquarters. The tags survive internal confederation transport.
-External exports retain the existing policy of stripping own-AS large
-communities.
+External exports strip internal identity/geography and implemented own-AS
+export controls after applying the controls. Other communities pass through.
 Locally originated business prefixes receive the PoP's location
 for both 644 and 645; local-only `extra_routes` are not tagged automatically.
 

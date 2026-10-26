@@ -20,7 +20,7 @@ function iana_downstream_import_default(int peer_region; int peer_country) {
     if !iana_filter_default_check() then reject;
     if is_self_iana_v6() then reject;
     remove_confederation_as();
-    remove_identity_community();
+    remove_internal_communities();
     iana_downstream_add_community();
     iana_add_geo(peer_region, peer_country);
     accept;
@@ -32,26 +32,30 @@ function iana_downstream_import_reject(int peer_region; int peer_country) {
 }
 {% endif %}
 {% if 'default' in ns.export_policies %}
-function iana_downstream_export_default() -> bool {
+function iana_downstream_export_default(int peer_as) -> bool {
     if !iana_filter_default_check() then return false;
     if !iana_downstream_check_community() then return false;
+    if !iana_apply_export(peer_as) then return false;
     remove_confederation_as();
-    remove_private_community();
+    remove_internal_communities();
+    remove_export_control_communities();
     return true;
 }
 {% endif %}
 {% if 'own_only' in ns.export_policies %}
-function iana_downstream_export_own_only() -> bool {
+function iana_downstream_export_own_only(int peer_as) -> bool {
     if !iana_filter_default_check() then return false;
     if !iana_downstream_check_community() then return false;
     if !is_self_iana_v6() then return false;
+    if !iana_apply_export(peer_as) then return false;
     remove_confederation_as();
-    remove_private_community();
+    remove_internal_communities();
+    remove_export_control_communities();
     return true;
 }
 {% endif %}
 {% if 'reject' in ns.export_policies %}
-function iana_downstream_export_reject() -> bool {
+function iana_downstream_export_reject(int peer_as) -> bool {
     return false;
 }
 {% endif %}
@@ -99,8 +103,7 @@ protocol bgp '{{ downstream.protocol }}' from iana_downstream{
             iana_downstream_import_{{ import_policy }}({{ downstream.geo | default({}) | geo_args(geo_region, geo_country) }});
         };
         export filter {
-            if !iana_downstream_export_{{ export_policy }}() then reject;
-            if !iana_apply_export({{ downstream.neighbor.asn }}) then reject;
+            if !iana_downstream_export_{{ export_policy }}({{ downstream.neighbor.asn }}) then reject;
             accept;
         };
     };

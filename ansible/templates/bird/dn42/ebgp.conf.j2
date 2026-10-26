@@ -21,7 +21,8 @@ function dn42_ebgp_export_v4(int peer_as) -> bool {
     }
     if !dn42_apply_export(peer_as) then return false;
     remove_confederation_as();
-    remove_private_community();
+    remove_internal_communities();
+    remove_export_control_communities();
     return true;
 }
 
@@ -35,7 +36,8 @@ function dn42_ebgp_export_v6(int peer_as) -> bool {
     }
     if !dn42_apply_export(peer_as) then return false;
     remove_confederation_as();
-    remove_private_community();
+    remove_internal_communities();
+    remove_export_control_communities();
     return true;
 }
 
@@ -48,7 +50,7 @@ function dn42_ebgp_import_{{ af }}(int peer_region; int peer_country) {
         }
         bgp_local_pref = dn42_ebgp_calculate_priority();
         remove_confederation_as();
-        remove_identity_community();
+        remove_internal_communities();
         dn42_ebgp_add_community();
         dn42_add_geo(peer_region, peer_country);
         accept;

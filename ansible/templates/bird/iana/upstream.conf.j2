@@ -13,11 +13,13 @@ function iana_upstream_check_community(){
     return true;
 }
 
-function iana_upstream_export_default() -> bool {
+function iana_upstream_export_default(int peer_as) -> bool {
     if !iana_filter_default_check() then return false;
     if !iana_upstream_check_community() then return false;
+    if !iana_apply_export(peer_as) then return false;
     remove_confederation_as();
-    remove_private_community();
+    remove_internal_communities();
+    remove_export_control_communities();
     return true;
 }
 
@@ -31,16 +33,13 @@ template bgp iana_upstream_v4 {
         import filter {
             if !iana_filter_default_check() then reject;
             remove_confederation_as();
-            remove_identity_community();
+            remove_internal_communities();
             iana_upstream_add_community();
             iana_add_geo(POP_REGION, POP_COUNTRY);
             accept;
         };
         export filter {
-            if !iana_filter_default_check() then reject;
-            if !iana_upstream_check_community() then reject;
-            remove_confederation_as();
-            remove_private_community();
+            if !iana_upstream_export_default(0) then reject;
             accept;
         };
         export limit 50;
@@ -59,16 +58,13 @@ template bgp iana_upstream_v6 {
         import filter {
             if !iana_filter_default_check() then reject;
             remove_confederation_as();
-            remove_identity_community();
+            remove_internal_communities();
             iana_upstream_add_community();
             iana_add_geo(POP_REGION, POP_COUNTRY);
             accept;
         };
         export filter {
-            if !iana_filter_default_check() then reject;
-            if !iana_upstream_check_community() then reject;
-            remove_confederation_as();
-            remove_private_community();
+            if !iana_upstream_export_default(0) then reject;
             accept;
         };
         export limit 50;
@@ -89,7 +85,7 @@ protocol bgp '{{ upstream.protocol }}' from iana_upstream_v4{
         import filter {
             if !iana_filter_default_check() then reject;
             remove_confederation_as();
-            remove_identity_community();
+            remove_internal_communities();
             iana_upstream_add_community();
             iana_add_geo({{ upstream.geo | default({}) | geo_args(geo_region, geo_country) }});
 {% for rewrite in upstream.next_hop_rewrites | default([]) %}            if bgp_next_hop = {{ rewrite.from }} then {
@@ -98,8 +94,7 @@ protocol bgp '{{ upstream.protocol }}' from iana_upstream_v4{
 {% endfor %}            accept;
         };
         export filter {
-            if !iana_upstream_export_default() then reject;
-            if !iana_apply_export({{ upstream.neighbor.asn }}) then reject;
+            if !iana_upstream_export_default({{ upstream.neighbor.asn }}) then reject;
             accept;
         };
         export limit 50;
@@ -119,7 +114,7 @@ protocol bgp '{{ upstream.protocol }}' from iana_upstream_v6{
         import filter {
             if !iana_filter_default_check() then reject;
             remove_confederation_as();
-            remove_identity_community();
+            remove_internal_communities();
             iana_upstream_add_community();
             iana_add_geo({{ upstream.geo | default({}) | geo_args(geo_region, geo_country) }});
 {% for rewrite in upstream.next_hop_rewrites | default([]) %}            if bgp_next_hop = {{ rewrite.from }} then {
@@ -128,8 +123,7 @@ protocol bgp '{{ upstream.protocol }}' from iana_upstream_v6{
 {% endfor %}            accept;
         };
         export filter {
-            if !iana_upstream_export_default() then reject;
-            if !iana_apply_export({{ upstream.neighbor.asn }}) then reject;
+            if !iana_upstream_export_default({{ upstream.neighbor.asn }}) then reject;
             accept;
         };
         export limit 50;

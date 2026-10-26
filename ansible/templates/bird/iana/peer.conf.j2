@@ -15,17 +15,19 @@ function iana_peer_check_community(){
 function iana_peer_import_default(int peer_region; int peer_country) {
     if !iana_filter_default_check() then reject;
     remove_confederation_as();
-    remove_identity_community();
+    remove_internal_communities();
     iana_peer_add_community();
     iana_add_geo(peer_region, peer_country);
     accept;
 }
-function iana_peer_export_default() {
-    if !iana_filter_default_check() then reject;
-    if !iana_peer_check_community() then reject;
+function iana_peer_export_default(int peer_as) -> bool {
+    if !iana_filter_default_check() then return false;
+    if !iana_peer_check_community() then return false;
+    if !iana_apply_export(peer_as) then return false;
     remove_confederation_as();
-    remove_private_community();
-    accept;
+    remove_internal_communities();
+    remove_export_control_communities();
+    return true;
 }
 
 template bgp iana_peer{
@@ -64,8 +66,7 @@ protocol bgp '{{ peer.protocol }}' from iana_peer{
             iana_peer_import_default({{ peer.geo | default({}) | geo_args(geo_region, geo_country) }});
         };
         export filter {
-            if !iana_peer_export_default() then reject;
-            if !iana_apply_export({{ peer.neighbor.asn }}) then reject;
+            if !iana_peer_export_default({{ peer.neighbor.asn }}) then reject;
             accept;
         };
     };
