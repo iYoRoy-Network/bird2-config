@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import argparse
+import fcntl
 import hashlib
 import json
-import os
 import shutil
 import subprocess
 import sys
@@ -183,6 +183,7 @@ def main():
     parser.add_argument("--backup-dir", required=True)
     parser.add_argument("--service-manager", choices=["systemd", "openrc"], default="systemd")
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--interface", help="Apply only this interface; preserve all others")
     args = parser.parse_args()
 
     staging_dir = Path(args.staging_dir)
@@ -196,6 +197,10 @@ def main():
     desired = set(staging_configs)
     live = set(live_configs)
     enabled = enabled_systemd() if args.service_manager == "systemd" else enabled_openrc()
+    if args.interface:
+        desired &= {args.interface}
+        live &= {args.interface}
+        enabled &= {args.interface}
 
     added = sorted(desired - live)
     changed = sorted(name for name in desired & live if staging_configs[name] != live_configs[name])
@@ -209,6 +214,7 @@ def main():
     backup_available = False
     promoted = False
     restored = False
+    touched = False
 
     summary = {
         "changed": bool(added or changed or removed or missing_enabled),
@@ -234,48 +240,86 @@ def main():
 
         backup_available = backup_live(live_dir, args.backup_dir)
 
+        def action(name, interface):
+            result = apply_service_action(args.service_manager, name, interface, False)
+            service_results.append(result)
+            if result.get("failed"):
+                service_failures.append(result)
+                raise RuntimeError("WireGuard %s failed for %s" % (name, interface))
+
+        # Tear down changed interfaces using their old address/hook settings.
+        for interface in changed:
+            touched = True
+            action("stop", interface)
+
         for interface in removed:
-            service_results.append(apply_service_action(args.service_manager, "stop", interface, False, ignore_failure=True))
-            service_results.append(apply_service_action(args.service_manager, "disable", interface, False, ignore_failure=True))
+            touched = True
+            action("stop", interface)
+            action("disable", interface)
             if args.service_manager == "openrc":
                 remove_openrc_link(interface, False)
 
-        promote(staging_dir, live_dir)
+        touched = True
+        if args.interface:
+            Path(live_dir).mkdir(parents=True, mode=0o700, exist_ok=True)
+            target = live_dir / (args.interface + ".conf")
+            if args.interface in desired:
+                temporary = target.with_suffix(".conf.tmp")
+                shutil.copyfile(staging_dir / target.name, temporary)
+                temporary.chmod(0o600)
+                temporary.replace(target)
+            else:
+                target.unlink(missing_ok=True)
+        else:
+            promote(staging_dir, live_dir)
         promoted = True
         summary["promoted"] = True
 
         for interface in missing_enabled:
             if args.service_manager == "openrc":
                 ensure_openrc_link(interface, False)
-            result = apply_service_action(args.service_manager, "enable", interface, False)
-            service_results.append(result)
-            if result.get("failed"):
-                service_failures.append(result)
+            action("enable", interface)
 
         for interface in start:
-            result = apply_service_action(args.service_manager, "start", interface, False)
-            service_results.append(result)
-            if result.get("failed"):
-                service_failures.append(result)
+            action("start", interface)
 
         for interface in restart:
-            result = apply_service_action(args.service_manager, "restart", interface, False)
-            service_results.append(result)
-            if result.get("failed"):
-                service_failures.append(result)
+            action("start", interface)
 
         print(json.dumps(summary, indent=2, sort_keys=True, ensure_ascii=False))
         return 1 if service_failures else 0
 
     except Exception as error:
-        if promoted and backup_available:
-            restored = restore(args.backup_dir, live_dir)
+        recovery = []
+        if touched:
+            # Stop new configurations while their teardown hooks are available.
+            for interface in sorted(set(added + changed)):
+                recovery.append(apply_service_action(args.service_manager, "stop", interface, False, True))
+            if backup_available:
+                restored = restore(args.backup_dir, live_dir)
+            else:
+                for interface in added:
+                    (live_dir / (interface + ".conf")).unlink(missing_ok=True)
+                restored = True
+            for interface in sorted(set(added + missing_enabled) - enabled):
+                recovery.append(apply_service_action(args.service_manager, "disable", interface, False, True))
+                if args.service_manager == "openrc":
+                    remove_openrc_link(interface, False)
+            for interface in sorted(enabled):
+                if args.service_manager == "openrc":
+                    ensure_openrc_link(interface, False)
+                recovery.append(apply_service_action(args.service_manager, "enable", interface, False, True))
+                if interface in changed or interface in removed:
+                    recovery.append(apply_service_action(args.service_manager, "restart", interface, False, True))
         summary["error"] = str(error)
         summary["promoted"] = promoted
         summary["restored"] = restored
+        summary["recovery_results"] = recovery
         print(json.dumps(summary, indent=2, sort_keys=True, ensure_ascii=False), file=sys.stderr)
         return 1
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    with Path("/var/lock/bird-wireguard-deploy.lock").open("a") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        raise SystemExit(main())

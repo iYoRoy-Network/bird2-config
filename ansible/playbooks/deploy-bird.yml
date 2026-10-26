@@ -18,6 +18,7 @@
         that:
           - ansible_host is defined
           - ansible_host != 'CHANGEME'
+          - ansible_connection | default('ssh') != 'local'
         fail_msg: "Set ansible_host for {{ inventory_hostname }} in ansible/inventory.production.yml before deploying."
 
     - name: Check rendered BIRD config exists locally
@@ -86,61 +87,19 @@
         chdir: "{{ bird_staging_dir }}"
       changed_when: false
 
-    - name: Inspect live BIRD config directory
-      ansible.builtin.stat:
-        path: "{{ bird_deploy.remote_dir }}"
-      register: live_bird_dir
+    - name: Upload shared BIRD deployment helper
+      ansible.builtin.copy:
+        src: ../files/bird_deploy.py
+        dest: "{{ bird_deploy.staging_parent }}/bird_deploy.py"
+        mode: '0700'
 
-    - name: Promote staged BIRD config
-      block:
-        - name: Create backup directory for existing BIRD config
-          ansible.builtin.file:
-            path: "{{ bird_backup_dir }}"
-            state: directory
-            mode: "0755"
-          when: live_bird_dir.stat.exists
-
-        - name: Backup existing BIRD config
-          ansible.builtin.command:
-            argv:
-              - rsync
-              - -a
-              - "{{ bird_deploy.remote_dir }}/"
-              - "{{ bird_backup_dir }}/"
-          when: live_bird_dir.stat.exists
-
-        - name: Ensure live BIRD config directory exists
-          ansible.builtin.file:
-            path: "{{ bird_deploy.remote_dir }}"
-            state: directory
-            mode: "0755"
-
-        - name: Promote staging to live BIRD config
-          ansible.builtin.shell: >-
-            rsync -a --delete
-            {% for pattern in bird_deploy.preserve_patterns | default([]) %} --exclude={{ pattern | quote }}{% endfor %}
-            {{ (bird_staging_dir + '/') | quote }} {{ (bird_deploy.remote_dir + '/') | quote }}
-
-        - name: Parse-check live BIRD config remotely
-          ansible.builtin.command: "{{ bird_deploy.check_command }}"
-          args:
-            chdir: "{{ bird_deploy.remote_dir }}"
-          changed_when: false
-
-        - name: Reload BIRD configuration
-          ansible.builtin.command: "{{ bird_deploy.reload_command }}"
-
-      rescue:
-        - name: Restore previous BIRD config from backup
-          ansible.builtin.command:
-            argv:
-              - rsync
-              - -a
-              - --delete
-              - "{{ bird_backup_dir }}/"
-              - "{{ bird_deploy.remote_dir }}/"
-          when: live_bird_dir.stat.exists | default(false)
-
-        - name: Report failed BIRD deployment
-          ansible.builtin.fail:
-            msg: "BIRD deploy failed on {{ inventory_hostname }}; restored backup from {{ bird_backup_dir }} when available."
+    - name: Apply BIRD tree with validation and recovery
+      ansible.builtin.command:
+        argv: >-
+          {{ ['python3', bird_deploy.staging_parent ~ '/bird_deploy.py',
+              '--staging-dir', bird_staging_dir,
+              '--live-dir', bird_deploy.remote_dir,
+              '--backup-dir', bird_backup_dir,
+              '--check-command', bird_deploy.check_command,
+              '--reload-command', bird_deploy.reload_command]
+             + (bird_deploy.preserve_patterns | default([]) | map('regex_replace', '^(.*)$', '--preserve=\1') | list) }}

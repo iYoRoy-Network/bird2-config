@@ -1,15 +1,4 @@
 ---
-# Render and deploy exactly one DN42 peer.
-#
-# Unlike the host-level render/deploy playbooks this playbook deliberately does
-# not run the complete render pipeline or any validate playbook. For a present
-# peer it creates only these local artifacts:
-#   .rendered-wireguard/<node>/dn42_<asn>.conf
-#   .rendered/<node>/dn42/peers/dn42_<asn>.conf
-#
-# It then copies only those two artifacts to the target node. An existing
-# WireGuard interface is updated with wg syncconf or started through the
-# configured service manager; BIRD is reloaded with birdc configure.
 - name: Render and deploy one DN42 peer
   hosts: bird_nodes
   gather_facts: false
@@ -17,324 +6,123 @@
   vars:
     target_peer_state: present
     peer_present: "{{ target_peer_state == 'present' }}"
-    do_bird: "{{ target_peer_state == 'present' and apply_bird | default(true) | bool }}"
-    do_wireguard: "{{ target_peer_state == 'present' and apply_wireguard | default(true) | bool }}"
-    remove_bird: "{{ target_peer_state == 'absent' and apply_bird | default(true) | bool }}"
-    remove_wireguard: "{{ target_peer_state == 'absent' and apply_wireguard | default(true) | bool }}"
     peer_interface: "dn42_{{ target_peer_asn }}"
-    peer_protocol: "dn42_peer_{{ target_peer_asn }}"
     target_peer_file: "{{ inventory_dir }}/host_vars/{{ inventory_hostname }}/dn42-peers/{{ target_peer_asn }}.yml"
-    peer_bird_source: "{{ render_root }}/{{ inventory_hostname }}/dn42/peers/dn42_{{ target_peer_asn }}.conf"
-    peer_bird_target: "{{ bird_deploy.remote_dir }}/dn42/peers/dn42_{{ target_peer_asn }}.conf"
-    peer_wireguard_source: "{{ wireguard_deploy.render_root }}/{{ inventory_hostname }}/dn42_{{ target_peer_asn }}.conf"
-    peer_wireguard_target: "{{ wireguard_deploy.remote_dir }}/dn42_{{ target_peer_asn }}.conf"
   tasks:
-    - name: Derive node addressing variables
-      ansible.builtin.include_tasks: ../tasks/derive-node-addressing.yml
-
-    - name: Validate target peer variables
+    - name: Require remote inventory and valid peer scope
       ansible.builtin.assert:
-        quiet: true
         that:
-          - target_peer_asn is defined
+          - ansible_connection | default('ssh') != 'local'
           - target_peer_asn | int | string == target_peer_asn | string
           - target_peer_state in ['present', 'absent']
           - apply_wireguard | default(true) | bool or apply_bird | default(true) | bool
 
-    - name: Check target peer definition
-      delegate_to: localhost
-      become: false
-      ansible.builtin.stat:
-        path: "{{ target_peer_file }}"
-      register: target_peer_file_stat
-      when: peer_present | bool
-
-    - name: Require target peer definition for present state
-      ansible.builtin.assert:
-        quiet: true
-        that:
-          - target_peer_file_stat.stat.exists
-        fail_msg: "Peer definition {{ target_peer_file }} does not exist."
-      when: peer_present | bool
-
-    - name: Load target peer definition
-      delegate_to: localhost
-      ansible.builtin.include_vars:
-        file: "{{ target_peer_file }}"
-        name: target_peer
-      when: peer_present | bool
-
-    - name: Validate target peer ASN matches filename
-      ansible.builtin.assert:
-        quiet: true
-        that:
-          - target_peer.asn | int == target_peer_asn | int
-        fail_msg: "Peer definition {{ target_peer_file }} has a mismatched ASN."
-      when: peer_present | bool
-
-    # The shared materialization task keeps DN42 defaults and transport hooks
-    # identical to the normal render pipeline, but receives only this peer.
-    - name: Limit effective DN42 intent to target peer
-      ansible.builtin.set_fact:
-        dn42: "{{ (dn42 | default({})) | combine({'peers': [target_peer]}, recursive=True) }}"
-        intra: "{{ (intra | default({})) | combine({'auto_confed_peers': [], 'explicit_confed_peers': []}, recursive=True) }}"
-        generated_wireguard_interfaces: []
-        wireguard: "{{ (wireguard | default({})) | combine({'interfaces': []}, recursive=True) }}"
-      when: peer_present | bool
-
-    - name: Check WireGuard secrets file when rendering WireGuard
-      delegate_to: localhost
-      become: false
-      ansible.builtin.stat:
-        path: "{{ wireguard_deploy.secrets_file }}"
-      register: target_wireguard_secrets_file
-      when: do_wireguard | bool
-
-    - name: Require WireGuard secrets file when rendering WireGuard
-      ansible.builtin.assert:
-        quiet: true
-        that:
-          - target_wireguard_secrets_file.stat.exists
-        fail_msg: "WireGuard secrets file {{ wireguard_deploy.secrets_file }} does not exist."
-      when: do_wireguard | bool
-
-    - name: Load WireGuard secrets for target render
-      delegate_to: localhost
-      ansible.builtin.include_vars:
-        file: "{{ wireguard_deploy.secrets_file }}"
-      no_log: true
-      when: do_wireguard | bool
-
-    - name: Materialize target WireGuard interface
-      ansible.builtin.include_tasks: ../tasks/materialize-domain-intent.yml
-      when: do_wireguard | bool
-
-    - name: Select target WireGuard interface
-      ansible.builtin.set_fact:
-        target_wireguard_interfaces: >-
-          {{ effective_wireguard_interfaces
-             | selectattr('name', 'equalto', peer_interface)
-             | list }}
-      when: do_wireguard | bool
-
-    - name: Require target WireGuard interface
-      ansible.builtin.assert:
-        quiet: true
-        that:
-          - target_wireguard_interfaces | length == 1
-        fail_msg: "Could not materialize exactly one WireGuard interface {{ peer_interface }}."
-      when: do_wireguard | bool
-
-    - name: Set target WireGuard interface fact
-      ansible.builtin.set_fact:
-        target_wireguard_interface: "{{ target_wireguard_interfaces[0] }}"
-      when: do_wireguard | bool
-
-    - name: Create target BIRD render directory
-      delegate_to: localhost
-      become: false
-      ansible.builtin.file:
-        path: "{{ peer_bird_source | dirname }}"
+    - name: Allocate isolated peer staging directory
+      ansible.builtin.tempfile:
         state: directory
-        mode: "0755"
-      when: do_bird | bool
+        prefix: bird-peer-
+      register: peer_stage
 
-    - name: Render target BIRD peer config
-      delegate_to: localhost
-      become: false
-      ansible.builtin.template:
-        src: ../templates/bird/dn42/peer.conf.j2
-        dest: "{{ peer_bird_source }}"
-        mode: "0644"
-      vars:
-        peer: "{{ target_peer }}"
-      when: do_bird | bool
-
-    - name: Create target WireGuard render directory
-      delegate_to: localhost
-      become: false
-      ansible.builtin.file:
-        path: "{{ peer_wireguard_source | dirname }}"
-        state: directory
-        mode: "0700"
-      when: do_wireguard | bool
-
-    - name: Render target WireGuard config
-      delegate_to: localhost
-      become: false
-      ansible.builtin.template:
-        src: ../templates/wireguard/wg-quick.conf.j2
-        dest: "{{ peer_wireguard_source }}"
-        mode: "0600"
-      vars:
-        wg_interface: "{{ target_wireguard_interface }}"
-      diff: false
-      no_log: true
-      when: do_wireguard | bool
-
-    - name: Ensure remote WireGuard directory exists
-      ansible.builtin.file:
-        path: "{{ wireguard_deploy.remote_dir }}"
-        state: directory
-        owner: "{{ deploy.file_owner | default('root') }}"
-        group: "{{ deploy.file_group | default('root') }}"
-        mode: "0700"
-      when: do_wireguard | bool
-
-    - name: Install rendered WireGuard config atomically
-      ansible.builtin.copy:
-        src: "{{ peer_wireguard_source }}"
-        dest: "{{ peer_wireguard_target }}.tmp"
-        owner: "{{ deploy.file_owner | default('root') }}"
-        group: "{{ deploy.file_group | default('root') }}"
-        mode: "0600"
-      no_log: true
-      when: do_wireguard | bool
-
-    - name: Promote rendered WireGuard config
-      ansible.builtin.command:
-        argv:
-          - mv
-          - -f
-          - "{{ peer_wireguard_target }}.tmp"
-          - "{{ peer_wireguard_target }}"
-      no_log: true
-      when: do_wireguard | bool
-
-    - name: Check whether target WireGuard interface is already up
-      ansible.builtin.command: "ip link show dev {{ peer_interface }}"
-      register: target_wireguard_link
-      failed_when: false
-      changed_when: false
-      check_mode: false
-      when: do_wireguard | bool
-
-    - name: Start target WireGuard with systemd
-      ansible.builtin.systemd:
-        name: "wg-quick@{{ peer_interface }}"
-        enabled: true
-        state: started
-      when: (do_wireguard | bool) and (deploy.service_manager | default('systemd') == 'systemd') and target_wireguard_link.rc != 0
-
-    - name: Start target WireGuard with OpenRC
+    - name: Apply peer update
       block:
-        - name: Link target WireGuard OpenRC service
+        - name: Derive node addressing
+          ansible.builtin.include_tasks: ../tasks/derive-node-addressing.yml
+
+        - name: Load target peer
+          ansible.builtin.include_vars:
+            file: "{{ target_peer_file }}"
+            name: target_peer
+          when: peer_present | bool
+
+        - name: Require matching ASN and interface
+          ansible.builtin.assert:
+            that:
+              - target_peer.asn | int == target_peer_asn | int
+              - target_peer.wireguard.interface | default(peer_interface) == peer_interface
+          when: peer_present | bool
+
+        - name: Restrict materialization to target peer
+          ansible.builtin.set_fact:
+            dn42: "{{ dn42 | default({}) | combine({'peers': [target_peer]}) }}"
+            intra: {auto_confed_peers: [], explicit_confed_peers: []}
+            wireguard: "{{ wireguard | combine({'interfaces': []}) }}"
+          when: peer_present | bool
+
+        - name: Materialize target
+          ansible.builtin.include_tasks: ../tasks/materialize-domain-intent.yml
+          when: peer_present | bool
+
+        - name: Load WireGuard secrets
+          ansible.builtin.include_vars:
+            file: "{{ wireguard_deploy.secrets_file }}"
+          no_log: true
+          when: peer_present | bool and apply_wireguard | default(true) | bool
+
+        - name: Create peer staging directories
           ansible.builtin.file:
-            src: /etc/init.d/wg-quick
-            dest: "/etc/init.d/wg-quick.{{ peer_interface }}"
-            state: link
-        - name: Enable target WireGuard OpenRC service
+            path: "{{ peer_stage.path }}/{{ item }}"
+            state: directory
+            mode: '0700'
+          loop: [wireguard, bird/dn42/peers]
+
+        - name: Render WireGuard target to staging
+          ansible.builtin.template:
+            src: ../templates/wireguard/wg-quick.conf.j2
+            dest: "{{ peer_stage.path }}/wireguard/{{ peer_interface }}.conf"
+            mode: '0600'
+          vars:
+            wg_interface: "{{ effective_wireguard_interfaces | selectattr('name', 'equalto', peer_interface) | first }}"
+          no_log: true
+          when: peer_present | bool and apply_wireguard | default(true) | bool
+
+        - name: Render BIRD target to staging
+          ansible.builtin.template:
+            src: ../templates/bird/dn42/peer.conf.j2
+            dest: "{{ peer_stage.path }}/bird/dn42/peers/{{ peer_interface }}.conf"
+            mode: '0644'
+          vars:
+            peer: "{{ target_peer }}"
+          when: peer_present | bool and apply_bird | default(true) | bool
+
+        - name: Upload shared deployment helpers
+          ansible.builtin.copy:
+            src: "../files/{{ item }}_deploy.py"
+            dest: "{{ peer_stage.path }}/{{ item }}_deploy.py"
+            mode: '0700'
+          loop: [wireguard, bird]
+
+        - name: Apply scoped WireGuard update with recovery
           ansible.builtin.command:
             argv:
-              - rc-update
-              - add
-              - "wg-quick.{{ peer_interface }}"
-              - default
-        - name: Start target WireGuard OpenRC service
+              - python3
+              - "{{ peer_stage.path }}/wireguard_deploy.py"
+              - --staging-dir
+              - "{{ peer_stage.path }}/wireguard"
+              - --live-dir
+              - "{{ wireguard_deploy.remote_dir }}"
+              - --backup-dir
+              - "{{ peer_stage.path }}/wireguard-backup"
+              - --service-manager
+              - "{{ deploy.service_manager | default('systemd') }}"
+              - --interface
+              - "{{ peer_interface }}"
+          no_log: true
+          when: apply_wireguard | default(true) | bool
+
+        - name: Apply scoped BIRD update with recovery
           ansible.builtin.command:
-            argv:
-              - rc-service
-              - "wg-quick.{{ peer_interface }}"
-              - start
-      when: (do_wireguard | bool) and (deploy.service_manager | default('systemd') == 'openrc') and target_wireguard_link.rc != 0
-
-    - name: Sync target WireGuard when interface is already up
-      ansible.builtin.shell: "wg syncconf {{ peer_interface | quote }} <(wg-quick strip {{ peer_wireguard_target | quote }})"
-      args:
-        executable: /bin/bash
-      no_log: true
-      when: (do_wireguard | bool) and target_wireguard_link.rc == 0
-
-    - name: Ensure remote BIRD peer directory exists
-      ansible.builtin.file:
-        path: "{{ bird_deploy.remote_dir }}/dn42/peers"
-        state: directory
-        owner: "{{ deploy.file_owner | default('root') }}"
-        group: "{{ deploy.file_group | default('root') }}"
-        mode: "0755"
-      when: do_bird | bool
-
-    - name: Install rendered BIRD peer config atomically
-      ansible.builtin.copy:
-        src: "{{ peer_bird_source }}"
-        dest: "{{ peer_bird_target }}.tmp"
-        owner: "{{ deploy.file_owner | default('root') }}"
-        group: "{{ deploy.file_group | default('root') }}"
-        mode: "0644"
-      when: do_bird | bool
-
-    - name: Promote rendered BIRD peer config
-      ansible.builtin.command:
-        argv:
-          - mv
-          - -f
-          - "{{ peer_bird_target }}.tmp"
-          - "{{ peer_bird_target }}"
-      when: do_bird | bool
-
-    - name: Reload BIRD after target peer update
-      ansible.builtin.command: "{{ bird_deploy.reload_command }}"
-      when: do_bird | bool
-
-    - name: Remove local target BIRD render artifact
-      delegate_to: localhost
-      become: false
-      ansible.builtin.file:
-        path: "{{ peer_bird_source }}"
-        state: absent
-      when: remove_bird | bool
-
-    - name: Remove target BIRD peer config
-      ansible.builtin.file:
-        path: "{{ peer_bird_target }}"
-        state: absent
-      when: remove_bird | bool
-
-    - name: Reload BIRD after target peer removal
-      ansible.builtin.command: "{{ bird_deploy.reload_command }}"
-      when: remove_bird | bool
-
-    - name: Stop target WireGuard with systemd
-      ansible.builtin.systemd:
-        name: "wg-quick@{{ peer_interface }}"
-        enabled: false
-        state: stopped
-      failed_when: false
-      when: (remove_wireguard | bool) and (deploy.service_manager | default('systemd') == 'systemd')
-
-    - name: Stop target WireGuard with OpenRC
-      block:
-        - name: Stop target WireGuard OpenRC service
-          ansible.builtin.command:
-            argv:
-              - rc-service
-              - "wg-quick.{{ peer_interface }}"
-              - stop
-          failed_when: false
-        - name: Disable target WireGuard OpenRC service
-          ansible.builtin.command:
-            argv:
-              - rc-update
-              - del
-              - "wg-quick.{{ peer_interface }}"
-              - default
-          failed_when: false
-        - name: Remove target WireGuard OpenRC service link
+            argv: >-
+              {{ ['python3', peer_stage.path ~ '/bird_deploy.py',
+                  '--staging-dir', peer_stage.path ~ '/bird',
+                  '--live-dir', bird_deploy.remote_dir,
+                  '--backup-dir', peer_stage.path ~ '/bird-backup',
+                  '--file', 'dn42/peers/' ~ peer_interface ~ '.conf',
+                  '--check-command', bird_deploy.check_command,
+                  '--reload-command', bird_deploy.reload_command]
+                 + (['--remove'] if not peer_present | bool else []) }}
+          when: apply_bird | default(true) | bool
+      always:
+        - name: Remove isolated staging directory
           ansible.builtin.file:
-            path: "/etc/init.d/wg-quick.{{ peer_interface }}"
+            path: "{{ peer_stage.path }}"
             state: absent
-      when: (remove_wireguard | bool) and (deploy.service_manager | default('systemd') == 'openrc')
-
-    - name: Remove local target WireGuard render artifact
-      delegate_to: localhost
-      become: false
-      ansible.builtin.file:
-        path: "{{ peer_wireguard_source }}"
-        state: absent
-      when: remove_wireguard | bool
-
-    - name: Remove target WireGuard config
-      ansible.builtin.file:
-        path: "{{ peer_wireguard_target }}"
-        state: absent
-      when: remove_wireguard | bool

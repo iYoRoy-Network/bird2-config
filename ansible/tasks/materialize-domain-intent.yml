@@ -77,17 +77,12 @@
     loop_var: peer
   vars:
     _bgp: "{{ peer.bgp | default({}) }}"
-    _ipv4: "{{ _bgp.ipv4 | default({}) }}"
-    _ipv6: "{{ _bgp.ipv6 | default({}) }}"
     _base: "{{
       {'file': _bgp.file,
        'protocol': _bgp.protocol,
        'neighbor': {'node': peer.node, 'interface': peer.interface}}
     }}"
-    _ipv4_block: "{{ {'ipv4': {'import_policy': _ipv4.import_policy, 'export_policy': _ipv4.export_policy}} if _ipv4.import_policy is defined else {} }}"
-    _ipv6_block: "{{ {'ipv6': {'import_policy': _ipv6.import_policy, 'export_policy': _ipv6.export_policy}} if _ipv6.import_policy is defined else {} }}"
-    _local_as: "{{ {'local_as': _bgp.local_as} if _bgp.local_as is defined else {} }}"
-    bgp_session: "{{ _base | combine(_ipv4_block) | combine(_ipv6_block) | combine(_local_as) }}"
+    bgp_session: "{{ _bgp | combine(_base) | intra_session }}"
 
 # ── DN42 peer intent → WireGuard interfaces ────────────────────────────
 
@@ -154,7 +149,7 @@
     effective_intra_ibgp_sessions: >-
       {{
         (generated_intra_ibgp_sessions if generated_intra_ibgp_sessions is defined else [])
-        + (effective_intra_explicit_confed_peers if effective_intra_explicit_confed_peers is defined else [])
+        + (effective_intra_explicit_confed_peers | map('intra_session') | list)
       }}
 
 - name: Ensure effective lists are set
