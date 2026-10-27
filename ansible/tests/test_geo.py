@@ -87,7 +87,7 @@ class GeoRenderingTests(unittest.TestCase):
         values = variables()
         count = 0
         for directory in (ROOT / "ansible/host_vars").iterdir():
-            if not directory.is_dir() or directory.name in {"cdg01-fr", "lhr01-uk"}:
+            if not directory.is_dir():
                 continue
             dn42 = yaml.safe_load((directory / "dn42.yml").read_text())["dn42"]
             iana = yaml.safe_load((directory / "iana.yml").read_text().replace("\t", " "))["iana"]

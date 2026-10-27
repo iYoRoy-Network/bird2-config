@@ -2,6 +2,9 @@ iana:
   enabled: true
   upstreams6:
   - protocol: iana_upstream_44324_v6
+    geo:
+      region: EUROPE
+      country: FRANCE
     description: MoeDove
     neighbor:
       address: fc00:32e0::1

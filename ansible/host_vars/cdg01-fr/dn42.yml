@@ -1,6 +1,5 @@
 dn42:
-  region: 41
-  country: 1250
+  enabled: true
   flapalerted:
     neighbor:
       port: 1790

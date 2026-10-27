@@ -50,8 +50,11 @@ with the peer's geo.
 `wireguard.standalone_interfaces` is for transports independent of managed
 peers. It remains supported and is validated alongside generated interfaces.
 Duplicate names, ports, protocols, session files, missing reciprocal intra
-links, and invalid policy names fail before rendering. Retired CDG/LHR host
-definitions are left untouched; active peers use explicit CDG endpoints.
+links, and invalid policy names fail before rendering. CDG/LHR now use the same
+node/domain schema and endpoint derivation as every other configured node.
+Both are included in local rendering, validation, and CI; their Autopeer flags
+remain disabled. Inclusion in these checks does not establish live service
+status or trigger production deployment.
 
 ## Reproducible Rendering
 
@@ -60,7 +63,7 @@ rendering does not query IRR. Refresh explicitly when AS-SET intent or membershi
 changes, inspect the snapshot diff, and commit the desired results:
 
 ```sh
-ansible-playbook -i ansible/inventory.yml ansible/playbooks/update-irr.yml --limit '!cdg01-fr'
+ansible-playbook -i ansible/inventory.yml ansible/playbooks/update-irr.yml
 ```
 
 This is the only step requiring `bgpq4` and IRR network access. A snapshot whose
@@ -91,10 +94,10 @@ Provide the ignored local BIRD/WireGuard secret files for the normal workflow:
 
 ```sh
 python3 -m unittest discover -s ansible/tests -v
-ansible-playbook -i ansible/inventory.yml ansible/playbooks/render.yml --limit '!cdg01-fr'
-ansible-playbook -i ansible/inventory.yml ansible/playbooks/validate.yml --limit '!cdg01-fr'
-ansible-playbook -i ansible/inventory.yml ansible/playbooks/render-wireguard.yml --limit '!cdg01-fr'
-ansible-playbook -i ansible/inventory.yml ansible/playbooks/validate-wireguard.yml --limit '!cdg01-fr'
+ansible-playbook -i ansible/inventory.yml ansible/playbooks/render.yml
+ansible-playbook -i ansible/inventory.yml ansible/playbooks/validate.yml
+ansible-playbook -i ansible/inventory.yml ansible/playbooks/render-wireguard.yml
+ansible-playbook -i ansible/inventory.yml ansible/playbooks/validate-wireguard.yml
 ```
 
 Outputs are `.rendered/<node>` and `.rendered-wireguard/<node>`. The local

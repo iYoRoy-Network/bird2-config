@@ -52,7 +52,10 @@ class NodeAddressingTests(unittest.TestCase):
             "tyo03-jp": "2a14:7583:f228::6f78", "pvg01-cn": "2a14:7583:f22d:2000::5fac",
             "fra01-de": "2a14:7583:f244::3b06", "fra02-de": "2a14:7583:f244::d131",
             "lax01-us": "2a14:7583:f284::de75",
+            "cdg01-fr": "2a14:7583:f244::a024", "lhr01-uk": "2a14:7583:f244::43af",
         }
+        inventory = yaml.safe_load((ROOT / "ansible/inventory.yml").read_text())
+        self.assertEqual(set(inventory["bird_nodes"]["hosts"]), set(expected))
         addresses = set()
         for host, address in expected.items():
             with self.subTest(host=host):

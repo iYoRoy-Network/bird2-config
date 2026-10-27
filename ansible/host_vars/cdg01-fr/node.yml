@@ -1,0 +1,13 @@
+node:
+  name: cdg01-fr
+  tier: 1
+  region: 2
+  node_id: 3
+  geo:
+    region: EUROPE
+    country: FRANCE
+  wireguard_endpoint_host: ipv4.cdg01-fr.ecs.iyoroy-infra.top
+  node_token: "a024"
+  public_ipv6_prefix: "2a14:7583:f244::/48"
+  peering:
+    enabled: false

@@ -2,25 +2,34 @@ iana:
   enabled: true
   upstreams6:
   - protocol: iana_upstream_44324_v6
+    geo:
+      region: EUROPE
+      country: UNITED_KINGDOM
     description: MoeDove
     neighbor:
       address: 2001:7f8:aa::195
       asn: 44324
   downstreams: []
-  peers: 
+  peers:
   - protocol: iana_ix_40115_rs1
+    geo:
+      region: EUROPE
+      country: UNITED_KINGDOM
     description: "KentIX"
     local: 2001:7f8:aa::188
     neighbor:
-      address: 	2001:7f8:aa::1
+      address: 2001:7f8:aa::1
       asn: 40115
     as_set: "none"
     enforce_first_as: false
   - protocol: iana_ix_218849_rs2
+    geo:
+      region: EUROPE
+      country: UNITED_KINGDOM
     description: "KentIX"
     local: 2001:7f8:aa::188
     neighbor:
-      address: 	2001:7f8:aa::2
+      address: 2001:7f8:aa::2
       asn: 218849
     as_set: "none"
     enforce_first_as: false

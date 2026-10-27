@@ -1,6 +1,6 @@
 # Public Node Addresses
 
-Each operational node declares its public address prefix in `host_vars/<node>/node.yml`:
+Each configured node declares its public address prefix in `host_vars/<node>/node.yml`:
 
 ```yaml
 node:

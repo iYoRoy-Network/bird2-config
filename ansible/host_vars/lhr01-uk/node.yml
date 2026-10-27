@@ -1,0 +1,13 @@
+node:
+  name: lhr01-uk
+  tier: 3
+  region: 2
+  node_id: 4
+  geo:
+    region: EUROPE
+    country: UNITED_KINGDOM
+  wireguard_endpoint_host: ipv4.lhr01-uk.ecs.iyoroy-infra.top
+  node_token: "43af"
+  public_ipv6_prefix: "2a14:7583:f244::/48"
+  peering:
+    enabled: false

@@ -24,13 +24,11 @@ jobs:
           python -m pip install -r ansible/requirements-dev.txt
       - name: Run rendering and runtime regression tests
         run: python -m unittest discover -s ansible/tests -v
-      - name: Render all operational BIRD nodes from fixed snapshots
+      - name: Render all configured BIRD nodes from fixed snapshots
         run: >-
           ansible-playbook -i ansible/inventory.yml ansible/playbooks/render.yml
-          --limit '!cdg01-fr'
           -e '{"bird_secrets":{"bgp_passwords":{"fra01_iana_upstream_64515":"ci-placeholder"}}}'
       - name: Verify and parse published BIRD artifacts
         run: >-
           ansible-playbook -i ansible/inventory.yml ansible/playbooks/validate.yml
-          --limit '!cdg01-fr'
           -e '{"bird_secrets":{"bgp_passwords":{"fra01_iana_upstream_64515":"ci-placeholder"}}}'

@@ -24,9 +24,9 @@ iana:
       region: ASIA_EAST
       country: JAPAN
     description: "TYIX https://tyo.cxix.net/"
-    local: 	23.154.164.153
+    local: 23.154.164.153
     neighbor:
-      address: 	23.154.164.129
+      address: 23.154.164.129
       asn: 402298
     as_set: "none"
     enforce_first_as: false
