@@ -14,7 +14,6 @@ from test_geo import render, variables
 class ExportControlTests(unittest.TestCase):
     def test_import_internal_transport_and_external_export(self):
         context = {
-            "bird_own_as_defines": ["IANA_OWNAS", "DN42_OWNAS"],
             "iana": {
                 "enabled": True,
                 "downstreams": [{"export_policy": policy} for policy in ("default", "own_only", "reject")],
@@ -274,15 +273,11 @@ class ExportControlTests(unittest.TestCase):
         )
         config = f"""
 router id 192.0.2.1;
-define IANA_OWNAS = 205369;
-define DN42_OWNAS = 4242422024;
 define INTRA_CONFEDERATION_START = 4220240000;
 define INTRA_CONFEDERATION_END = 4220249999;
 define GEO_COMM_AS = 64511;
 define POP_REGION = 44;
 define POP_COUNTRY = 1840;
-define DN42_REGION = POP_REGION;
-define DN42_COUNTRY = POP_COUNTRY;
 {defines}
 roa6 table iana_roa_v6;
 roa4 table dn42_roa;

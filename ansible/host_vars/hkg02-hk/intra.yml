@@ -1,5 +1,6 @@
 intra:
-  enabled: true
+  flapalerted:
+    enabled: true
   auto_confed_peers:
     - node: lax01-us
       interface: intra_lax01

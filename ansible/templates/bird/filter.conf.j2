@@ -5,29 +5,42 @@ function remove_confederation_as() {
 
 # Untrusted external input must not supply our internal identity or geo.
 # Do not call this on internal sessions: their ingress markers must survive.
+{% set dn42_on = dn42 is defined and dn42.enabled | default(false) %}
+{% set iana_on = iana is defined and iana.enabled | default(false) %}
+{% set route_origin_asns = [] %}
+{% if dn42_on %}{% set route_origin_asns = route_origin_asns + [route_domains.dn42.origin_as] %}{% endif %}
+{% if iana_on %}{% set route_origin_asns = route_origin_asns + [route_domains.iana.origin_as] %}{% endif %}
+{% if bird_route_origin_asns is defined %}{% set route_origin_asns = bird_route_origin_asns %}{% endif %}
 function remove_internal_communities(){
-{% for own_as in bird_own_as_defines %}    bgp_large_community.delete([({{ own_as }}, COMM_FN_IDENTIFY, *), ({{ own_as }}, COMM_FN_GEO_SRC, *), ({{ own_as }}, COMM_FN_GEO_DST, *)]);
+{% for own_as in route_origin_asns %}    bgp_large_community.delete([({{ own_as }}, COMM_FN_IDENTIFY, *), ({{ own_as }}, COMM_FN_GEO_SRC, *), ({{ own_as }}, COMM_FN_GEO_DST, *)]);
 {% endfor %}}
 
 # Strip only the controls implemented here, after the export actions run.
 # Foreign communities and unrecognized own-AS function codes pass through.
 function remove_export_control_communities(){
-{% for own_as in bird_own_as_defines %}
+{% for own_as in route_origin_asns %}
 {% for name in bgp_community if name.startswith(('FN_ATTACH_', 'FN_DENY_', 'FN_ONLY_', 'FN_PREPEND_')) %}
     bgp_large_community.delete([({{ own_as }}, COMM_{{ name }}, *)]);
 {% endfor %}
 {% endfor %}}
 
-{% for own_as in bird_own_as_defines %}
-# Rebuild this domain's ingress geo from the configured peering endpoints.
-function {{ 'iana' if own_as == 'IANA_OWNAS' else 'dn42' }}_add_geo(int peer_region; int peer_country) {
-    bgp_large_community.delete([({{ own_as }}, COMM_FN_GEO_SRC, *), ({{ own_as }}, COMM_FN_GEO_DST, *)]);
-    bgp_large_community.add(({{ own_as }}, COMM_FN_GEO_SRC, peer_region));
-    bgp_large_community.add(({{ own_as }}, COMM_FN_GEO_SRC, peer_country));
-    bgp_large_community.add(({{ own_as }}, COMM_FN_GEO_DST, POP_REGION));
-    bgp_large_community.add(({{ own_as }}, COMM_FN_GEO_DST, POP_COUNTRY));
+{% if dn42_on %}function dn42_add_geo(int peer_region; int peer_country) {
+    bgp_large_community.delete([({{ route_domains.dn42.origin_as }}, COMM_FN_GEO_SRC, *), ({{ route_domains.dn42.origin_as }}, COMM_FN_GEO_DST, *)]);
+    bgp_large_community.add(({{ route_domains.dn42.origin_as }}, COMM_FN_GEO_SRC, peer_region));
+    bgp_large_community.add(({{ route_domains.dn42.origin_as }}, COMM_FN_GEO_SRC, peer_country));
+    bgp_large_community.add(({{ route_domains.dn42.origin_as }}, COMM_FN_GEO_DST, POP_REGION));
+    bgp_large_community.add(({{ route_domains.dn42.origin_as }}, COMM_FN_GEO_DST, POP_COUNTRY));
 }
-{% endfor %}
+{% endif %}
+
+{% if iana_on %}function iana_add_geo(int peer_region; int peer_country) {
+    bgp_large_community.delete([({{ route_domains.iana.origin_as }}, COMM_FN_GEO_SRC, *), ({{ route_domains.iana.origin_as }}, COMM_FN_GEO_DST, *)]);
+    bgp_large_community.add(({{ route_domains.iana.origin_as }}, COMM_FN_GEO_SRC, peer_region));
+    bgp_large_community.add(({{ route_domains.iana.origin_as }}, COMM_FN_GEO_SRC, peer_country));
+    bgp_large_community.add(({{ route_domains.iana.origin_as }}, COMM_FN_GEO_DST, POP_REGION));
+    bgp_large_community.add(({{ route_domains.iana.origin_as }}, COMM_FN_GEO_DST, POP_COUNTRY));
+}
+{% endif %}
 
 {% macro export_controls(fn_name, own_as) -%}
 # Apply export controls using the target peer's ASN and endpoint geography.
@@ -95,10 +108,10 @@ function {{ fn_name }}(int peer_as; int peer_region; int peer_country) -> bool {
 }
 {%- endmacro %}
 {% if iana is defined and iana.enabled | default(false) %}
-{{ export_controls('iana_apply_export', 'IANA_OWNAS') }}
+{{ export_controls('iana_apply_export', route_domains.iana.origin_as) }}
 {% endif %}
 {% if dn42 is defined and dn42.enabled | default(false) %}
-{{ export_controls('dn42_apply_export', 'DN42_OWNAS') }}
+{{ export_controls('dn42_apply_export', route_domains.dn42.origin_as) }}
 {% endif %}
 
 function get_unique_as_path_len() -> int

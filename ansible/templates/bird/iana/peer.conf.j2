@@ -1,14 +1,14 @@
 function iana_peer_add_community(){
-    bgp_large_community.add((IANA_OWNAS,COMM_FN_IDENTIFY,COMM_ORIGIN_PEER));
+    bgp_large_community.add(({{ route_domains.iana.origin_as }},COMM_FN_IDENTIFY,COMM_ORIGIN_PEER));
 }
 
 function iana_peer_check_community(){
-    if !(bgp_large_community ~ [(IANA_OWNAS,COMM_FN_IDENTIFY,*)]) then return false;
+    if !(bgp_large_community ~ [({{ route_domains.iana.origin_as }},COMM_FN_IDENTIFY,*)]) then return false;
     if bgp_community ~ [(65535,65281)] then reject;
     if bgp_community ~ [(65535,65282)] then reject;
 
-    if bgp_large_community ~ [(IANA_OWNAS,COMM_FN_IDENTIFY,COMM_ORIGIN_PEER)] then return false;
-    if bgp_large_community ~ [(IANA_OWNAS,COMM_FN_IDENTIFY,COMM_ORIGIN_UPSTREAM)] then return false;
+    if bgp_large_community ~ [({{ route_domains.iana.origin_as }},COMM_FN_IDENTIFY,COMM_ORIGIN_PEER)] then return false;
+    if bgp_large_community ~ [({{ route_domains.iana.origin_as }},COMM_FN_IDENTIFY,COMM_ORIGIN_UPSTREAM)] then return false;
 
     return true;
 }
@@ -31,8 +31,8 @@ function iana_peer_export_default(int peer_as; int peer_region; int peer_country
 }
 
 template bgp iana_peer{
-    router id IANA_ROUTER_ID;
-    local as IANA_OWNAS;
+    router id {{ iana.router_id }};
+    local as {{ route_domains.iana.origin_as }};
 
     ipv4 {
         next hop self;

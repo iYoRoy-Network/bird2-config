@@ -1,0 +1,33 @@
+{% set flap = intra.flapalerted | default({}) %}
+{% set _flap_server_node = flap.server_node | default(intra_global.flapalerted.server_node) %}
+{% set _flap_server_v6 = hostvars[_flap_server_node].node | intra_loopback_v6(intra_global) %}
+{% set _flap_bgp_port = flap.bgp_port | default(intra_global.flapalerted.bgp_port) %}
+{% set _flap_rpki_port = flap.rpki_port | default(intra_global.flapalerted.rpki_port) %}
+protocol bgp intra_flapalerted {
+    router id {{ derived_intra_loopback_v4 }};
+    local {{ derived_intra_loopback_v6 }} as {{ route_domains.dn42.origin_as }};
+    neighbor {{ _flap_server_v6 }} as {{ route_domains.dn42.origin_as }} port {{ _flap_bgp_port }};
+
+    ipv4 {
+        table master4;
+        add paths on;
+        export where bgp_large_community ~ [({{ route_domains.dn42.origin_as }},COMM_FN_IDENTIFY,*)];
+        import none;
+        extended next hop on;
+    };
+
+    ipv6 {
+        table master6;
+        add paths on;
+        export where bgp_large_community ~ [({{ route_domains.dn42.origin_as }},COMM_FN_IDENTIFY,*)];
+        import none;
+    };
+}
+
+protocol rpki intra_flapalerted_rpki {
+    roa4 { table dn42_roa_flap_v4; };
+    roa6 { table dn42_roa_flap_v6; };
+    remote {{ _flap_server_v6 }} port {{ _flap_rpki_port }};
+    max version 1;
+    retry keep 10;
+};

@@ -2,12 +2,6 @@ dn42:
   enabled: true
   rpki:
     enabled: false
-  flapalerted:
-    neighbor:
-      port: 1790
-    rpki_remote:
-      # StayRTR listener port
-      port: 8083
   peers: []
   ix:
     sessions:

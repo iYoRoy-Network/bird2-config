@@ -12,14 +12,19 @@
 {% if ipv4_export_policy not in ns.export_policies %}{% set ns.export_policies = ns.export_policies + [ipv4_export_policy] %}{% endif %}
 {% if ipv6_export_policy not in ns.export_policies %}{% set ns.export_policies = ns.export_policies + [ipv6_export_policy] %}{% endif %}
 {% endfor %}
+{% set dn42_on = dn42 is defined and dn42.enabled | default(false) %}
 {% set iana_on = iana is defined and iana.enabled | default(false) %}
+{% set route_origin_asns = [] %}
+{% if dn42_on %}{% set route_origin_asns = route_origin_asns + [route_domains.dn42.origin_as] %}{% endif %}
+{% if iana_on %}{% set route_origin_asns = route_origin_asns + [route_domains.iana.origin_as] %}{% endif %}
+{% if bird_route_origin_asns is defined %}{% set route_origin_asns = bird_route_origin_asns %}{% endif %}
 {% if 'default' in ns.import_policies %}
 filter intra_ibgp_import_default {
     # no-advertise
     if bgp_community ~ [(65535,65282)] then reject;
 
     # require a known origin in an enabled domain
-{% for own_as in bird_own_as_defines %}    if bgp_large_community ~ [({{ own_as }},COMM_FN_IDENTIFY,*)] then accept;
+{% for own_as in route_origin_asns %}    if bgp_large_community ~ [({{ own_as }},COMM_FN_IDENTIFY,*)] then accept;
 {% endfor %}
     # default: reject
     reject;
@@ -31,57 +36,57 @@ filter intra_ibgp_export_default {
     if bgp_community ~ [(65535,65282)] then reject;
 
     # require a known origin in an enabled domain
-{% for own_as in bird_own_as_defines %}    if bgp_large_community ~ [({{ own_as }},COMM_FN_IDENTIFY,*)] then accept;
+{% for own_as in route_origin_asns %}    if bgp_large_community ~ [({{ own_as }},COMM_FN_IDENTIFY,*)] then accept;
 {% endfor %}
     # default: reject
     reject;
 }
 {% endif %}
 
-{% if 'iana_full' in ns.import_policies %}
+{% if iana_on and 'iana_full' in ns.import_policies %}
 filter intra_ibgp_import_iana_full {
     # no-advertise
     if bgp_community ~ [(65535,65282)] then reject;
 
     # iana origin only
-    if bgp_large_community ~ [(IANA_OWNAS,COMM_FN_IDENTIFY,*)] then accept;
+    if bgp_large_community ~ [({{ route_domains.iana.origin_as }},COMM_FN_IDENTIFY,*)] then accept;
 
     # default: reject
     reject;
 }
 {% endif %}
-{% if 'iana_full' in ns.export_policies %}
+{% if iana_on and 'iana_full' in ns.export_policies %}
 filter intra_ibgp_export_iana_full {
     # no-advertise
     if bgp_community ~ [(65535,65282)] then reject;
 
     # iana origin only
-    if bgp_large_community ~ [(IANA_OWNAS,COMM_FN_IDENTIFY,*)] then accept;
+    if bgp_large_community ~ [({{ route_domains.iana.origin_as }},COMM_FN_IDENTIFY,*)] then accept;
 
     # default: reject
     reject;
 }
 {% endif %}
 
-{% if 'dn42_full' in ns.import_policies %}
+{% if dn42_on and 'dn42_full' in ns.import_policies %}
 filter intra_ibgp_import_dn42_full {
     # no-advertise
     if bgp_community ~ [(65535,65282)] then reject;
 
     # dn42 origin only
-    if bgp_large_community ~ [(DN42_OWNAS,COMM_FN_IDENTIFY,*)] then accept;
+    if bgp_large_community ~ [({{ route_domains.dn42.origin_as }},COMM_FN_IDENTIFY,*)] then accept;
 
     # default: reject
     reject;
 }
 {% endif %}
-{% if 'dn42_full' in ns.export_policies %}
+{% if dn42_on and 'dn42_full' in ns.export_policies %}
 filter intra_ibgp_export_dn42_full {
     # no-advertise
     if bgp_community ~ [(65535,65282)] then reject;
 
     # dn42 origin only
-    if bgp_large_community ~ [(DN42_OWNAS,COMM_FN_IDENTIFY,*)] then accept;
+    if bgp_large_community ~ [({{ route_domains.dn42.origin_as }},COMM_FN_IDENTIFY,*)] then accept;
 
     # default: reject
     reject;
@@ -94,7 +99,7 @@ filter intra_ibgp_import_full {
     if bgp_community ~ [(65535,65282)] then reject;
 
     # require a known origin in an enabled domain
-{% for own_as in bird_own_as_defines %}    if bgp_large_community ~ [({{ own_as }},COMM_FN_IDENTIFY,*)] then accept;
+{% for own_as in route_origin_asns %}    if bgp_large_community ~ [({{ own_as }},COMM_FN_IDENTIFY,*)] then accept;
 {% endfor %}
     # default: reject
     reject;
@@ -106,24 +111,24 @@ filter intra_ibgp_export_full {
     if bgp_community ~ [(65535,65282)] then reject;
 
     # require a known origin in an enabled domain
-{% for own_as in bird_own_as_defines %}    if bgp_large_community ~ [({{ own_as }},COMM_FN_IDENTIFY,*)] then accept;
+{% for own_as in route_origin_asns %}    if bgp_large_community ~ [({{ own_as }},COMM_FN_IDENTIFY,*)] then accept;
 {% endfor %}
     # default: reject
     reject;
 }
 {% endif %}
 
-{% if '3377confed_iana' in ns.import_policies %}
+{% if iana_on and '3377confed_iana' in ns.import_policies %}
 filter intra_ibgp_import_3377confed_iana {
     # no-advertise
     if bgp_community ~ [(65535,65282)] then reject;
 
 {% if iana_on %}    # control: allow from iana
-    if bgp_large_community ~ [(IANA_OWNAS,COMM_FN_IDENTIFY,*)] then accept;
+    if bgp_large_community ~ [({{ route_domains.iana.origin_as }},COMM_FN_IDENTIFY,*)] then accept;
 
 {% endif %}    # allow from 3377 igp
     if bgp_large_community ~ [(4242423377, 0, 36)] then {
-{% if iana_on %}        bgp_large_community.add((IANA_OWNAS,COMM_FN_IDENTIFY,COMM_ORIGIN_CUSTOMER));
+{% if iana_on %}        bgp_large_community.add(({{ route_domains.iana.origin_as }},COMM_FN_IDENTIFY,COMM_ORIGIN_CUSTOMER));
 {% endif %}        accept;
     }
 
@@ -131,17 +136,17 @@ filter intra_ibgp_import_3377confed_iana {
     reject;
 }
 {% endif %}
-{% if '3377confed_iana' in ns.export_policies %}
+{% if iana_on and '3377confed_iana' in ns.export_policies %}
 filter intra_ibgp_export_3377confed_iana {
     # no-advertise
     if bgp_community ~ [(65535,65282)] then reject;
 
 {% if iana_on %}    # control: allow from iana
-    if bgp_large_community ~ [(IANA_OWNAS,COMM_FN_IDENTIFY,*)] then accept;
+    if bgp_large_community ~ [({{ route_domains.iana.origin_as }},COMM_FN_IDENTIFY,*)] then accept;
 
 {% endif %}    # allow from 3377 igp
     if bgp_large_community ~ [(4242423377, 0, 36)] then {
-{% if iana_on %}        bgp_large_community.delete((IANA_OWNAS,COMM_FN_IDENTIFY,COMM_ORIGIN_CUSTOMER));
+{% if iana_on %}        bgp_large_community.delete(({{ route_domains.iana.origin_as }},COMM_FN_IDENTIFY,COMM_ORIGIN_CUSTOMER));
 {% endif %}        accept;
     }
 
@@ -151,8 +156,8 @@ filter intra_ibgp_export_3377confed_iana {
 {% endif %}
 
 template bgp intra_ibgpeers {
-    router   id INTRA_ROUTERID;
-    local    as INTRA_OWNAS;
+    router   id {{ intra.router_id | default(derived_intra_loopback_v4) }};
+    local    as {{ derived_intra_as }};
     neighbor external;
     interpret communities off;
 };

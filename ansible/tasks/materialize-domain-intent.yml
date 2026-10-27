@@ -2,7 +2,8 @@
 - name: Normalize domain intent and validate transport topology
   ansible.builtin.set_fact:
     effective_intent: >-
-      {{ {'intra': intra | default({}), 'dn42': dn42 | default({}), 'wireguard': wireguard | default({})}
+      {{ {'intra': intra | default({}), 'dn42': dn42 | default({}),
+           'iana': iana | default({}), 'wireguard': wireguard | default({})}
          | materialize_intent(hostvars, inventory_hostname,
              {'intra': intra_wireguard_defaults, 'dn42': dn42_wireguard_defaults}) }}
 
@@ -10,3 +11,4 @@
   ansible.builtin.set_fact:
     effective_wireguard_interfaces: "{{ effective_intent.wireguard_interfaces }}"
     effective_intra_ibgp_sessions: "{{ effective_intent.intra_ibgp_sessions }}"
+    effective_dn42_peer_sessions: "{{ effective_intent.dn42_peer_sessions }}"

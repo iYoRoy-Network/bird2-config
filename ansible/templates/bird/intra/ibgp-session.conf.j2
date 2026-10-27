@@ -1,4 +1,3 @@
-{% set session = session | intra_session %}
 {% if session.neighbor.node is defined %}
 {% set neighbor_node = hostvars[session.neighbor.node].node %}
 {% set neighbor_address = neighbor_node | intra_lla(intra_global) %}

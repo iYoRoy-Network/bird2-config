@@ -3,18 +3,18 @@ function iana_ibgp_add_community(){
 }
 
 function iana_ibgp_check_community(){
-    if !(bgp_large_community ~ [(IANA_OWNAS,COMM_FN_IDENTIFY,*)]) then return false;
+    if !(bgp_large_community ~ [({{ route_domains.iana.origin_as }},COMM_FN_IDENTIFY,*)]) then return false;
     if bgp_community ~ [(65535,65282)] then reject;
     return true;
 }
 
 
 template bgp iana_ibgp {
-    local as IANA_OWNAS;
-    neighbor as IANA_OWNAS;
+    local as {{ route_domains.iana.origin_as }};
+    neighbor as {{ route_domains.iana.origin_as }};
     path metric 1;
     multihop;
-    router id IANA_ROUTER_ID;
+    router id {{ iana.router_id }};
 
     ipv6 {
         import filter {

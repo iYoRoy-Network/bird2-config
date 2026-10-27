@@ -4,7 +4,7 @@ protocol static dn42_static_v4{
 
     ipv4 {
         import filter{
-            bgp_large_community.add((DN42_OWNAS,COMM_FN_IDENTIFY,COMM_ORIGIN_CUSTOMER));
+            bgp_large_community.add(({{ route_domains.dn42.origin_as }},COMM_FN_IDENTIFY,COMM_ORIGIN_CUSTOMER));
             dn42_add_geo(POP_REGION, POP_COUNTRY);
             accept;
         };
@@ -19,7 +19,7 @@ protocol static dn42_static_v6{
 
     ipv6 {
         import filter{
-            bgp_large_community.add((DN42_OWNAS,COMM_FN_IDENTIFY,COMM_ORIGIN_CUSTOMER));
+            bgp_large_community.add(({{ route_domains.dn42.origin_as }},COMM_FN_IDENTIFY,COMM_ORIGIN_CUSTOMER));
             dn42_add_geo(POP_REGION, POP_COUNTRY);
             accept;
         };

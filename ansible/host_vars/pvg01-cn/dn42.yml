@@ -2,14 +2,6 @@ dn42:
   enabled: true
   own_ip: 172.20.234.233
   own_ipv6: fd18:3e15:61d0::9
-  flapalerted:
-    local: 172.20.234.233
-    neighbor:
-      address: 172.20.234.232
-      port: 1790
-    rpki_remote:
-      address: 172.20.234.232
-      port: 8083
   peers: []
   ix:
     sessions: []

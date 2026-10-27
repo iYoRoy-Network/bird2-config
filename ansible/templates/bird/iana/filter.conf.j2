@@ -5,7 +5,7 @@ function is_self_iana_v6() {
 function iana_filter_default_check(){
     if net ~ [::/0] then return false;
     if net.len > 48 then return false;
-    if bgp_large_community ~ [(IANA_OWNAS,COMM_FN_IDENTIFY,*)] && is_self_iana_v6() then return true;
+    if bgp_large_community ~ [({{ route_domains.iana.origin_as }},COMM_FN_IDENTIFY,*)] && is_self_iana_v6() then return true;
     if roa_check(iana_roa_v6, net, bgp_path.last) = ROA_INVALID then return false;
     return true;
 }
@@ -13,6 +13,6 @@ function iana_filter_default_check(){
 # Internal host routes carry their identity and NO_EXPORT through iBGP.
 function iana_internal_check() -> bool {
     if bgp_community ~ [(65535,65282)] then return false;
-    if bgp_large_community ~ [(IANA_OWNAS,COMM_FN_IDENTIFY,*)] && is_self_iana_v6() then return true;
+    if bgp_large_community ~ [({{ route_domains.iana.origin_as }},COMM_FN_IDENTIFY,*)] && is_self_iana_v6() then return true;
     return iana_filter_default_check();
 }

@@ -67,6 +67,7 @@ class GeoRenderingTests(unittest.TestCase):
         self.assertIn("define POP_REGION = GEO_REGION_NA_WEST;", output)
         self.assertIn("define POP_COUNTRY = GEO_COUNTRY_UNITED_STATES;", output)
         self.assertNotIn("define DN42_OWNAS", output)
+        self.assertNotIn("define GEO_COMM_AS", output)
 
     def test_dn42_session_geo_override_and_disabled_af(self):
         peer = {
@@ -77,7 +78,7 @@ class GeoRenderingTests(unittest.TestCase):
                 "geo": {"region": "ASIA_EAST", "country": "JAPAN"},
             }]},
         }
-        output = render("dn42/peer.conf", peer=peer)
+        output = render("dn42/peer.conf", peer_bundle={"peer": peer, "sessions": INTENT.dn42_sessions(peer)})
         self.assertIn("dn42_ebgp_import_v6(GEO_REGION_ASIA_EAST, GEO_COUNTRY_JAPAN)", output)
         self.assertIn("dn42_ebgp_export_v6(65000, GEO_REGION_ASIA_EAST, GEO_COUNTRY_JAPAN)", output)
         self.assertNotIn("dn42_ebgp_import_v4", output)
@@ -121,7 +122,7 @@ class GeoRenderingTests(unittest.TestCase):
         for af in ("v4", "v6"):
             self.assertIn(f"dn42_ix_export_{af}(65000, GEO_REGION_ASIA_EAST, GEO_COUNTRY_JAPAN)", output)
         legacy = {"asn": 65000, "neighbor": {"address": "fe80::2"}, "bgp": {"extended_next_hop": True}}
-        output = render("dn42/peer.conf", peer=legacy)
+        output = render("dn42/peer.conf", peer_bundle={"peer": legacy, "sessions": INTENT.dn42_sessions(legacy)})
         for af in ("v4", "v6"):
             self.assertIn(f"dn42_ebgp_export_{af}(65000, POP_REGION, POP_COUNTRY)", output)
 
@@ -132,13 +133,10 @@ class GeoRuntimeTests(unittest.TestCase):
         values = variables()
         defines = "\n".join(f"define COMM_{key} = {value};" for key, value in values["bgp_community"].items())
         functions = render(
-            "filter.conf", bird_own_as_defines=["IANA_OWNAS", "DN42_OWNAS"],
-            iana={"enabled": True}, dn42={"enabled": True},
+            "filter.conf", iana={"enabled": True}, dn42={"enabled": True},
         )
         config = f"""
 router id 192.0.2.1;
-define IANA_OWNAS = 205369;
-define DN42_OWNAS = 4242422024;
 define INTRA_CONFEDERATION_START = 4220240000;
 define INTRA_CONFEDERATION_END = 4220249999;
 define POP_REGION = 44;

@@ -1,5 +1,6 @@
 intra:
-  enabled: true
+  flapalerted:
+    enabled: false
   auto_confed_peers:
     - node: hkg02-hk
       interface: intra_hkg02

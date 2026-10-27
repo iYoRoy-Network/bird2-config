@@ -1,10 +1,5 @@
 dn42:
   enabled: true
-  flapalerted:
-    neighbor:
-      port: 1790
-    rpki_remote:
-      port: 8083
   peers: []
   ix:
     sessions: []

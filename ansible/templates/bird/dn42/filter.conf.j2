@@ -29,10 +29,10 @@ function is_valid_dn42_network_v6() {
 function dn42_ebgp_calculate_priority() {
     int priority = 100;
     
-    if bgp_community ~ [(GEO_COMM_AS, DN42_REGION)] then 
+    if bgp_community ~ [(GEO_COMM_AS, POP_REGION)] then
         priority = priority + 10;
     
-    if bgp_community ~ [(GEO_COMM_AS, DN42_COUNTRY)] then 
+    if bgp_community ~ [(GEO_COMM_AS, POP_COUNTRY)] then
         priority = priority + 5;
     
     if bgp_path.len = 1 then 

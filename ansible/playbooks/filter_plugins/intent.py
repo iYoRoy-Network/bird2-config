@@ -23,30 +23,48 @@ def intra_session(session):
     return result
 
 
+def validate_intra_domains(session, dn42_enabled, iana_enabled):
+    policies = [session[family][direction + "_policy"]
+                for family in ("ipv4", "ipv6")
+                for direction in ("import", "export")]
+    if "dn42_full" in policies and not dn42_enabled:
+        raise AnsibleFilterError("intra session requires the DN42 domain")
+    if ({"iana_full", "3377confed_iana"} & set(policies)) and not iana_enabled:
+        raise AnsibleFilterError("intra session requires the IANA domain")
+
+
 def bird_modules(domains):
-    result = {name: [] for name in ("iana", "dn42", "intra")}
-    for name, settings in domains.items():
-        if not settings.get("enabled", False):
-            continue
-        if name == "iana":
-            files = ["rpki.conf", "filter.conf", "static.conf"]
-            for key, filename in (("peers", "peer.conf"), ("downstreams", "downstream.conf")):
-                if settings.get(key):
-                    files.append(filename)
-            if settings.get("upstreams4") or settings.get("upstreams6"):
-                files.insert(3, "upstream.conf")
-            if settings.get("ibgp", {}).get("sessions"):
-                files.append("ibgp.conf")
-        elif name == "dn42":
-            files = (["rpki.conf"] if settings.get("rpki", {}).get("enabled", True) else [])
-            files += ["filter.conf", "flapalerted.conf", "static.conf"]
-            if settings.get("peers"):
-                files.append("ebgp.conf")
-            if settings.get("ix", {}).get("sessions"):
-                files.append("ix.conf")
-        else:
-            files = ["ibgp.conf", "static.conf"]
-        result[name] = files
+    """Return the complete BIRD module plan for one node.
+
+    Intra is the required underlay module.  DN42 and IANA are independent edge
+    modules, while the Flapalerted client is an optional intra service.
+    """
+    result = {"iana": [], "dn42": [], "intra": ["ibgp.conf", "static.conf"]}
+    intra = domains.get("intra", {})
+    if intra.get("flapalerted", {}).get("enabled", False):
+        result["intra"].append("flapalerted.conf")
+
+    iana = domains.get("iana", {})
+    if iana.get("enabled", False):
+        files = ["rpki.conf", "filter.conf", "static.conf"]
+        for key, filename in (("peers", "peer.conf"), ("downstreams", "downstream.conf")):
+            if iana.get(key):
+                files.append(filename)
+        if iana.get("upstreams4") or iana.get("upstreams6"):
+            files.insert(3, "upstream.conf")
+        if iana.get("ibgp", {}).get("sessions"):
+            files.append("ibgp.conf")
+        result["iana"] = files
+
+    dn42 = domains.get("dn42", {})
+    if dn42.get("enabled", False):
+        files = (["rpki.conf"] if dn42.get("rpki", {}).get("enabled", True) else [])
+        files += ["filter.conf", "flap-dampening.conf", "static.conf"]
+        if dn42.get("peers"):
+            files.append("ebgp.conf")
+        if dn42.get("ix", {}).get("sessions"):
+            files.append("ix.conf")
+        result["dn42"] = files
     return result
 
 
@@ -141,8 +159,8 @@ def irr_defines(snapshot, queries):
 def materialize_intent(config, hostvars, hostname, defaults):
     """Build transport interfaces and internal sessions without mutating input."""
     intra, dn42, wireguard = (config.get(name, {}) for name in ("intra", "dn42", "wireguard"))
-    interfaces, sessions = [], []
-    for peer in intra.get("auto_confed_peers", []) if intra.get("enabled", False) else []:
+    interfaces, sessions, dn42_peer_sessions = [], [], []
+    for peer in intra.get("auto_confed_peers", []):
         remote = hostvars.get(peer["node"])
         if remote is None:
             raise AnsibleFilterError("Unknown intra node %s" % peer["node"])
@@ -166,8 +184,11 @@ def materialize_intent(config, hostvars, hostname, defaults):
         interfaces.append({**interface, "name": peer["interface"], "peer": tunnel_peer})
         sessions.append(intra_session({**peer.get("bgp", {}),
                                        "neighbor": {"node": peer["node"], "interface": peer["interface"]}}))
+        validate_intra_domains(sessions[-1], dn42.get("enabled", False),
+                               config.get("iana", {}).get("enabled", False))
     for peer in dn42.get("peers", []) if dn42.get("enabled", False) else []:
-        dn42_sessions(peer)
+        normalized_sessions = dn42_sessions(peer)
+        dn42_peer_sessions.append({"peer": deepcopy(peer), "sessions": normalized_sessions})
         if "wireguard" not in peer:
             continue
         wg = {**defaults["dn42"], **peer["wireguard"]}
@@ -180,7 +201,11 @@ def materialize_intent(config, hostvars, hostname, defaults):
             interface.setdefault("post_down", []).insert(0, "ip %s addr del %s/%s dev %%i || true" % (family, peer["src"], length))
         interfaces.append({**interface, "name": wg.get("interface", "dn42_%s" % peer["asn"]), "peer": tunnel_peer})
     interfaces += deepcopy(wireguard.get("standalone_interfaces") or [])
-    sessions += [intra_session(session) for session in intra.get("explicit_confed_peers", [])] if intra.get("enabled", False) else []
+    explicit_sessions = [intra_session(session) for session in intra.get("explicit_confed_peers", [])]
+    for session in explicit_sessions:
+        validate_intra_domains(session, dn42.get("enabled", False),
+                               config.get("iana", {}).get("enabled", False))
+    sessions += explicit_sessions
     unique(interfaces, "name", "WireGuard interface")
     unique(interfaces, "listen_port", "WireGuard listen port")
     unique(sessions, "protocol", "intra protocol")
@@ -188,9 +213,11 @@ def materialize_intent(config, hostvars, hostname, defaults):
     for interface in interfaces:
         if not re.fullmatch(r"[A-Za-z0-9_=+.-]{1,15}", interface["name"]):
             raise AnsibleFilterError("Invalid WireGuard interface name %r" % interface["name"])
-    protocols = [{"protocol": session["protocol"]} for peer in dn42.get("peers", []) for session in dn42_sessions(peer)]
+    protocols = [{"protocol": session["protocol"]}
+                 for peer in dn42_peer_sessions for session in peer["sessions"]]
     unique(protocols, "protocol", "DN42 protocol")
-    return {"wireguard_interfaces": interfaces, "intra_ibgp_sessions": sessions}
+    return {"wireguard_interfaces": interfaces, "intra_ibgp_sessions": sessions,
+            "dn42_peer_sessions": dn42_peer_sessions}
 
 
 class FilterModule:

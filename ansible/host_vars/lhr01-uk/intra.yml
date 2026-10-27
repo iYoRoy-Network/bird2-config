@@ -1,5 +1,6 @@
 intra:
-  enabled: true
+  flapalerted:
+    enabled: true
   auto_confed_peers:
     - node: cdg01-fr
       interface: intra_cdg01

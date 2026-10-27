@@ -81,7 +81,6 @@ class NodeAddressingTests(unittest.TestCase):
                 address = ADDRESSING.public_ipv6(node)
                 context = {
                     "iana": {"enabled": True}, "intra": {}, "node": node,
-                    "bird_own_as_defines": ["IANA_OWNAS"],
                     "derived_public_ipv6": address,
                     "derived_intra_loopback_v4": "100.64.11.3",
                     "derived_intra_loopback_v6": "fd18:3e15:61d0:ffff:1:1::7d89",
@@ -92,7 +91,7 @@ class NodeAddressingTests(unittest.TestCase):
                 self.assertTrue(all(IPv6Network(route).prefixlen == 128 for route in routes if ":" in route))
                 self.assertNotIn(f"route {prefix} ", static)
                 self.assertIn("COMM_WK_NO_EXPORT", static)
-                self.assertIn("IANA_OWNAS,COMM_FN_IDENTIFY", static)
+                self.assertIn("205369,COMM_FN_IDENTIFY", static)
                 self.assertIn(f"krt_prefsrc = {address};", render("kernel.conf", **context))
                 overlay = env.get_template("network/overlay.j2").render(**(variables() | context))
                 self.assertIn(f"address {address}/128", overlay)

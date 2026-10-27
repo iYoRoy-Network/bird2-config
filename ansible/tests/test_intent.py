@@ -43,7 +43,8 @@ class IntentTests(unittest.TestCase):
                  for path in (ROOT / "ansible/host_vars").iterdir() if (path / "node.yml").exists()}
         defaults = yaml.safe_load((ROOT / "ansible/group_vars/all/wireguard.yml").read_text())
         defaults = {"intra": defaults["intra_wireguard_defaults"], "dn42": defaults["dn42_wireguard_defaults"]}
-        config = {"intra": hosts["hkg02-hk"]["intra"], "dn42": {"enabled": False}}
+        config = {"intra": hosts["hkg02-hk"]["intra"],
+                  "dn42": {"enabled": True}, "iana": {"enabled": True}}
         first = INTENT.materialize_intent(config, hosts, "hkg02-hk", defaults)
         hosts["tyo01-jp"]["ansible_host"] = "different-management-address"
         self.assertEqual(first, INTENT.materialize_intent(config, hosts, "hkg02-hk", defaults))
@@ -66,8 +67,9 @@ class IntentTests(unittest.TestCase):
             with self.subTest(host=host):
                 config = hosts[host]
                 self.assertFalse(config["node"]["peering"]["enabled"])
-                for domain in ("iana", "dn42", "intra"):
+                for domain in ("iana", "dn42"):
                     self.assertTrue(config[domain]["enabled"])
+                self.assertIn("intra", config)
                 self.assertEqual(config["iana"]["static"]["advertise_routes"],
                                  ["2a14:7583:f240::/43", "{{ iana_global.anycast_net_v6 }}"])
                 intent = INTENT.materialize_intent(config, hosts, host, defaults)
@@ -88,7 +90,15 @@ class IntentTests(unittest.TestCase):
     def test_domain_enable_and_file_selection(self):
         self.assertEqual(INTENT.bird_modules({"dn42": {"enabled": False, "peers": [{}]}})["dn42"], [])
         self.assertEqual(INTENT.bird_modules({"dn42": {"enabled": True, "rpki": {"enabled": False}}})["dn42"],
-                         ["filter.conf", "flapalerted.conf", "static.conf"])
+                         ["filter.conf", "flap-dampening.conf", "static.conf"])
+        modules = INTENT.bird_modules({
+            "intra": {"flapalerted": {"enabled": True}},
+            "dn42": {"enabled": False},
+            "iana": {"enabled": False},
+        })
+        self.assertEqual(modules["intra"], ["ibgp.conf", "static.conf", "flapalerted.conf"])
+        self.assertEqual(modules["dn42"], [])
+        self.assertEqual(modules["iana"], [])
         files = INTENT.bird_modules({"iana": {"enabled": True, "upstreams6": [{}], "peers": [{}]}})
         self.assertEqual(files["iana"], ["rpki.conf", "filter.conf", "static.conf", "upstream.conf", "peer.conf"])
 
@@ -101,3 +111,15 @@ class IntentTests(unittest.TestCase):
         self.assertEqual(source["ipv4"], {"export_policy": "dn42_full"})
         with self.assertRaises(AnsibleFilterError):
             INTENT.intra_session({"export_policy": "typo"})
+
+    def test_intra_policy_cannot_reference_disabled_domain(self):
+        config = {
+            "intra": {"explicit_confed_peers": [{
+                "file": "iana.conf", "protocol": "intra_iana",
+                "ipv4": {"import_policy": "iana_full", "export_policy": "iana_full"},
+            }]},
+            "dn42": {"enabled": False},
+            "iana": {"enabled": False},
+        }
+        with self.assertRaisesRegex(AnsibleFilterError, "requires the IANA domain"):
+            INTENT.materialize_intent(config, {}, "node", {"intra": {}, "dn42": {}})

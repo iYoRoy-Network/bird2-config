@@ -54,8 +54,8 @@ ISO numeric +1000 offset: `205369:660:1392` denies IANA export to Japan.
 Multiple values of the same `only` function form an allow list. Region,
 country, and ASN constraints must all pass, and a matching deny overrides an
 allow. Without a control of a given type, that type imposes no restriction.
-For example, `[IANA_OWNAS, COMM_FN_ONLY_REGION, GEO_REGION_ASIA_EAST]` together
-with `[IANA_OWNAS, COMM_FN_ONLY_COUNTRY, GEO_COUNTRY_JAPAN]` permits only peers
+For example, `[205369, COMM_FN_ONLY_REGION, GEO_REGION_ASIA_EAST]` together
+with `[205369, COMM_FN_ONLY_COUNTRY, GEO_COUNTRY_JAPAN]` permits only peers
 whose configured region is East Asia and country is Japan, subject to the
 existing export eligibility checks.
 

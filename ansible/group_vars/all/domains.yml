@@ -1,7 +1,12 @@
 ---
 # Per-domain global defaults (DN42 / IANA / intra confederation)
+route_domains:
+  dn42:
+    origin_as: 4242422024
+  iana:
+    origin_as: 205369
+
 dn42_global:
-  own_as: 4242422024
   own_net: 172.20.234.224/28
   own_net_v6: fd18:3e15:61d0::/48
   own_netset: '[ 172.20.234.224/28+ ]'
@@ -9,7 +14,6 @@ dn42_global:
   # DN42's route-origin geo community namespace: (64511, region|country)
   geo_comm_as: 64511
 iana_global:
-  own_as: 205369
   anycast_net_v6: 2a14:7581:0ffb::/48
   own_netset_v6: '[ 2a14:7581:0ffb::/48+, 2a14:7583:f200::/40+, 2a14:67c3:fff0::/44+, 2a14:67c3:c0::/44+ ]'
 intra_global:
@@ -20,12 +24,16 @@ intra_global:
   loopback_v6_prefix: fd18:3e15:61d0:ffff
   link_local_prefix: fe80::2024
   confederation_as_format: '422024%d%d%02d'
+  flapalerted:
+    server_node: hkg01-hk
+    bgp_port: 1790
+    rpki_port: 8083
   underlay_loopback_communities:
-    - [DN42_OWNAS, COMM_FN_IDENTIFY, COMM_ORIGIN_CUSTOMER]
+    - [4242422024, COMM_FN_IDENTIFY, COMM_ORIGIN_CUSTOMER]
     - [COMM_FN_WELLKNOWN, COMM_WK_NO_EXPORT]
   dn42_overlay_route_communities:
-    - [DN42_OWNAS, COMM_FN_IDENTIFY, COMM_ORIGIN_CUSTOMER]
+    - [4242422024, COMM_FN_IDENTIFY, COMM_ORIGIN_CUSTOMER]
     - [COMM_FN_WELLKNOWN, COMM_WK_NO_EXPORT]
   iana_overlay_route_communities:
-    - [IANA_OWNAS, COMM_FN_IDENTIFY, COMM_ORIGIN_CUSTOMER]
+    - [205369, COMM_FN_IDENTIFY, COMM_ORIGIN_CUSTOMER]
     - [COMM_FN_WELLKNOWN, COMM_WK_NO_EXPORT]

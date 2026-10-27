@@ -6,11 +6,11 @@
 {% if export_policy not in ns.export_policies %}{% set ns.export_policies = ns.export_policies + [export_policy] %}{% endif %}
 {% endfor %}
 function iana_downstream_add_community(){
-    bgp_large_community.add((IANA_OWNAS,COMM_FN_IDENTIFY,COMM_ORIGIN_CUSTOMER));
+    bgp_large_community.add(({{ route_domains.iana.origin_as }},COMM_FN_IDENTIFY,COMM_ORIGIN_CUSTOMER));
 }
 
 function iana_downstream_check_community(){
-    if !(bgp_large_community ~ [(IANA_OWNAS,COMM_FN_IDENTIFY,*)]) then return false;
+    if !(bgp_large_community ~ [({{ route_domains.iana.origin_as }},COMM_FN_IDENTIFY,*)]) then return false;
     if bgp_community ~ [(65535,65281)] then reject;
     if bgp_community ~ [(65535,65282)] then reject;
     return true;
@@ -60,8 +60,8 @@ function iana_downstream_export_reject(int peer_as; int peer_region; int peer_co
 }
 {% endif %}
 template bgp iana_downstream {
-    router id IANA_ROUTER_ID;
-    local as IANA_OWNAS;
+    router id {{ iana.router_id }};
+    local as {{ route_domains.iana.origin_as }};
     path metric 1;
     graceful restart;
 

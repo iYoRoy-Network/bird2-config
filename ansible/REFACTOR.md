@@ -27,10 +27,23 @@ Successful scoped deployments remove their temporary backups.
 
 ## Configuration Ownership
 
-Each domain has one `enabled` flag under `iana`, `dn42`, or `intra`. Removed
-`modules.*` flags were not authoritative for IANA/DN42; migration preserves
-their previous effective behavior. `dn42.rpki.enabled` controls its RPKI module.
-The same `bird_modules` function selects both generated files and includes.
+`intra` is the mandatory underlay domain and its presence enables the internal
+confederation. `dn42` and `iana` each have an independent `enabled` flag.
+Their directories and includes are derived from that flag, so disabling one
+domain leaves no files for it in the rendered artifact. `dn42.rpki.enabled`
+controls its optional external RPKI client, while DN42 flap dampening tables
+are always present whenever DN42 is enabled. The same `bird_modules` function
+selects both generated files and includes.
+
+The optional Flapalerted feed is configured as `intra.flapalerted`. Its target
+node and BGP/RPKI ports are inherited from `intra_global.flapalerted` unless
+overridden per node. It requires DN42 because it exports DN42 routes; the feed
+itself remains an intra service, separate from DN42's always-on dampening
+tables.
+
+Route-domain origin ASNs live in `group_vars/all/domains.yml` under
+`route_domains`. Templates emit numeric ASNs directly; the old `*_OWNAS` and
+router-id macro layer is no longer part of the rendered configuration.
 
 PoP geography belongs to `node.geo`. Peer/session geography remains independent.
 `node.region` is the existing addressing/topology index, not a community region.

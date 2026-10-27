@@ -7,22 +7,23 @@
 {% endif -%}
 {% endfor -%}
 {% endmacro %}
+{% set iana_static = iana.static | default({}) %}
 protocol static iana_static_advertise{
-{% for route in iana.static.advertise_routes %}{% if route is mapping %}
+{% for route in iana_static.advertise_routes | default([]) %}{% if route is mapping %}
 {% set communities = route.communities | default([]) %}    route {{ route.prefix | mandatory }} reject{% if communities %} {
 {{ render_communities(communities) }}    }{% endif %};
 {% else %}    route {{ route }} reject;
 {% endif %}{% endfor %}
     ipv6 {
         import filter{
-            bgp_large_community.add((IANA_OWNAS,COMM_FN_IDENTIFY,COMM_ORIGIN_CUSTOMER));
+            bgp_large_community.add(({{ route_domains.iana.origin_as }},COMM_FN_IDENTIFY,COMM_ORIGIN_CUSTOMER));
             iana_add_geo(POP_REGION, POP_COUNTRY);
             accept;
         };
         export none;
     };
 }
-{% for route_group in iana.static.extra_routes | default([]) %}
+{% for route_group in iana_static.extra_routes | default([]) %}
 {% if route_group.prefixes is defined %}
 protocol static {{ route_group.name | default(route_group.protocol) }}{
 {% for route in route_group.prefixes %}

@@ -1,13 +1,13 @@
-{% for session in peer | dn42_sessions %}
+{% for session in peer_bundle.sessions %}
 protocol bgp '{{ session.protocol }}' from dnpeers {
-{% if peer.description is defined and peer.description is not none %}    description "{{ peer.description | replace('\\', '\\\\') | replace('"', '\\"') }}";
+{% if peer_bundle.peer.description is defined and peer_bundle.peer.description is not none %}    description "{{ peer_bundle.peer.description | replace('\\', '\\\\') | replace('"', '\\"') }}";
 {% endif %}{% if session.interface %}    direct;
-{% endif %}    neighbor {{ session.neighbor }}{% if session.interface %} % '{{ session.interface }}'{% endif %} as {{ peer.asn }}{% if session.port %} port {{ session.port }}{% endif %};
+{% endif %}    neighbor {{ session.neighbor }}{% if session.interface %} % '{{ session.interface }}'{% endif %} as {{ peer_bundle.peer.asn }}{% if session.port %} port {{ session.port }}{% endif %};
 {% if session.source %}    source address {{ session.source }};
 {% endif %}{% for family, suffix in [('ipv4', 'v4'), ('ipv6', 'v6')] %}    {{ family }} {
 {% if family == 'ipv4' and session.extended_next_hop %}        extended next hop;
 {% endif %}{% if family in session.address_families %}        import filter { dn42_ebgp_import_{{ suffix }}({{ session.geo | geo_args(geo_region, geo_country) }}); };
-        export filter { if !dn42_ebgp_export_{{ suffix }}({{ peer.asn }}, {{ session.geo | geo_args(geo_region, geo_country) }}) then reject; accept; };
+        export filter { if !dn42_ebgp_export_{{ suffix }}({{ peer_bundle.peer.asn }}, {{ session.geo | geo_args(geo_region, geo_country) }}) then reject; accept; };
 {% else %}        import none;
         export none;
 {% endif %}    };

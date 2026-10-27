@@ -6,7 +6,9 @@ log syslog all;
 {% for _name, _value in bgp_community.items() %}
 define COMM_{{ _name }} = {{ _value }};
 {% endfor %}
+{% if dn42 is defined and dn42.enabled | default(false) %}
 define GEO_COMM_AS = {{ dn42_global.geo_comm_as }};
+{% endif %}
 {% for _name, _code in geo_region.items() %}
 define GEO_REGION_{{ _name }} = {{ _code }};
 {% endfor %}
@@ -16,37 +18,23 @@ define GEO_COUNTRY_{{ _name }} = {{ _code }};
 {% set pop_geo = node.geo %}
 define POP_REGION = {{ pop_geo.region | geo_define(geo_region, 'region') }};
 define POP_COUNTRY = {{ pop_geo.country | geo_define(geo_country, 'country') }};
-{% if iana is defined and iana.enabled | default(false) %}
-define IANA_OWNAS                = {{ iana_global.own_as }};
-define IANA_ROUTER_ID            = {{ iana.router_id }};
-
-{% endif %}{% if dn42 is defined and dn42.enabled | default(false) %}
-define DN42_OWNAS                = {{ dn42_global.own_as }};
-
-define DN42_REGION               = POP_REGION;
-define DN42_COUNTRY              = POP_COUNTRY;
-
-{% endif %}{% if intra is not defined %}{% set intra = {} %}{% endif %}
+{% if intra is not defined %}{% set intra = {} %}{% endif %}
 define INTRA_CONFEDERATION_START = {{ intra_global.confederation_start }};
 define INTRA_CONFEDERATION_END   = {{ intra_global.confederation_end }};
-{% if intra.enabled | default(false) %}
-define INTRA_OWNAS               = {{ derived_intra_as }};
-define INTRA_ROUTERID            = {{ intra.router_id | default(derived_intra_loopback_v4) }};
-{% endif %}
 
 protocol device {
     scan time {{ bird.device_scan_time | default(10) }};
 }
 
-{% set iana_enabled = iana is defined and iana.enabled | default(false) %}
-{% set domain_files = {'iana': iana | default({}), 'dn42': dn42 | default({}), 'intra': intra | default({})} | bird_modules %}
+{% set domain_config = {'iana': iana | default({}), 'dn42': dn42 | default({}), 'intra': intra | default({})} %}
+{% set domain_files = bird_domain_files | default(domain_config | bird_modules) %}
 
 {% set _iana_has_peers = (iana.peers | default([]) | length) > 0 %}
 {% set _iana_has_downstreams = (iana.downstreams | default([]) | length) > 0 %}
 
 {# ── Render includes ── #}
 {% set root_includes = ['filter.conf'] %}
-{% if iana_enabled and (_iana_has_peers or _iana_has_downstreams) %}
+{% if domain_files.iana | length > 0 and (_iana_has_peers or _iana_has_downstreams) %}
 {% set root_includes = root_includes + ['iana_downstream_whitelist.conf'] %}
 {% endif %}
 {% set root_includes = root_includes + (bird.extra_root_includes | default([])) %}

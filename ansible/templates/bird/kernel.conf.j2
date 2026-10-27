@@ -1,15 +1,21 @@
+{% set dn42_on = dn42 is defined and dn42.enabled | default(false) %}
+{% set iana_on = iana is defined and iana.enabled | default(false) %}
+{% set route_origin_asns = [] %}
+{% if dn42_on %}{% set route_origin_asns = route_origin_asns + [route_domains.dn42.origin_as] %}{% endif %}
+{% if iana_on %}{% set route_origin_asns = route_origin_asns + [route_domains.iana.origin_as] %}{% endif %}
+{% if bird_route_origin_asns is defined %}{% set route_origin_asns = bird_route_origin_asns %}{% endif %}
 protocol kernel kernel_v4{
     ipv4 {
         table master4;
         import none;
         export filter {
             if source = RTS_STATIC then {
-{% for own_as in bird_own_as_defines %}                if bgp_large_community ~ [({{ own_as }},*,*)] then accept;
+{% for own_as in route_origin_asns %}                if bgp_large_community ~ [({{ own_as }},*,*)] then accept;
 {% endfor %}                if bgp_community ~ [(65535,65282)] then accept;
                 reject;
             }
             krt_prefsrc = {{ derived_intra_loopback_v4 }};
-{% if dn42 is defined and dn42.enabled | default(false) and dn42.own_ip is defined %}            if bgp_large_community ~ [(DN42_OWNAS,*,*)] && !(net ~ {{ intra_global.prefix_v4 }}) then krt_prefsrc = {{ dn42.own_ip }};
+{% if dn42 is defined and dn42.enabled | default(false) and dn42.own_ip is defined %}            if bgp_large_community ~ [({{ route_domains.dn42.origin_as }},*,*)] && !(net ~ {{ intra_global.prefix_v4 }}) then krt_prefsrc = {{ dn42.own_ip }};
 {% endif %}            accept;
         };
     };
@@ -21,13 +27,13 @@ protocol kernel kernel_v6 {
         import none;
         export filter {
             if source = RTS_STATIC then {
-{% for own_as in bird_own_as_defines %}                if bgp_large_community ~ [({{ own_as }},*,*)] then accept;
+{% for own_as in route_origin_asns %}                if bgp_large_community ~ [({{ own_as }},*,*)] then accept;
 {% endfor %}                if bgp_community ~ [(65535,65282)] then accept;
                 reject;
             }
             krt_prefsrc = {{ derived_intra_loopback_v6 }};
-{% if dn42 is defined and dn42.enabled | default(false) and dn42.own_ipv6 is defined %}            if bgp_large_community ~ [(DN42_OWNAS,*,*)] && !(net ~ {{ intra_global.prefix_v6 }}) then krt_prefsrc = {{ dn42.own_ipv6 }};
-{% endif %}{% if iana is defined and iana.enabled | default(false) %}            if bgp_large_community ~ [(IANA_OWNAS,*,*)] && !(net ~ {{ intra_global.prefix_v6 }}) then krt_prefsrc = {{ derived_public_ipv6 }};
+{% if dn42 is defined and dn42.enabled | default(false) and dn42.own_ipv6 is defined %}            if bgp_large_community ~ [({{ route_domains.dn42.origin_as }},*,*)] && !(net ~ {{ intra_global.prefix_v6 }}) then krt_prefsrc = {{ dn42.own_ipv6 }};
+{% endif %}{% if iana is defined and iana.enabled | default(false) %}            if bgp_large_community ~ [({{ route_domains.iana.origin_as }},*,*)] && !(net ~ {{ intra_global.prefix_v6 }}) then krt_prefsrc = {{ derived_public_ipv6 }};
 {% endif %}            accept;
         };
     };

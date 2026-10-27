@@ -1,14 +1,14 @@
 function dn42_ix_add_community(){
-    bgp_large_community.add((DN42_OWNAS,COMM_FN_IDENTIFY,COMM_ORIGIN_PEER));
+    bgp_large_community.add(({{ route_domains.dn42.origin_as }},COMM_FN_IDENTIFY,COMM_ORIGIN_PEER));
 }
 
 function dn42_ix_check_community(){
-    if !(bgp_large_community ~ [(DN42_OWNAS,COMM_FN_IDENTIFY,*)]) then return false;
+    if !(bgp_large_community ~ [({{ route_domains.dn42.origin_as }},COMM_FN_IDENTIFY,*)]) then return false;
     if bgp_community ~ [(65535,65281)] then reject;
     if bgp_community ~ [(65535,65282)] then reject;
 
-    if bgp_large_community ~ [(DN42_OWNAS,COMM_FN_IDENTIFY,COMM_ORIGIN_PEER)] then return false;
-    if bgp_large_community ~ [(DN42_OWNAS,COMM_FN_IDENTIFY,COMM_ORIGIN_UPSTREAM)] then return false;
+    if bgp_large_community ~ [({{ route_domains.dn42.origin_as }},COMM_FN_IDENTIFY,COMM_ORIGIN_PEER)] then return false;
+    if bgp_large_community ~ [({{ route_domains.dn42.origin_as }},COMM_FN_IDENTIFY,COMM_ORIGIN_UPSTREAM)] then return false;
 
     return true;
 }
@@ -18,8 +18,8 @@ function dn42_ix_export_v4(int peer_as; int peer_region; int peer_country) -> bo
     if roa_check(dn42_roa_flap_v4, net, bgp_path.last) = ROA_INVALID then return false;
     if !dn42_ix_check_community() then return false;
     if is_self_dn42_net() then {
-        bgp_community.add((GEO_COMM_AS, DN42_REGION));
-        bgp_community.add((GEO_COMM_AS, DN42_COUNTRY));
+        bgp_community.add((GEO_COMM_AS, POP_REGION));
+        bgp_community.add((GEO_COMM_AS, POP_COUNTRY));
     }
     if !dn42_apply_export(peer_as, peer_region, peer_country) then return false;
     remove_confederation_as();
@@ -33,8 +33,8 @@ function dn42_ix_export_v6(int peer_as; int peer_region; int peer_country) -> bo
     if roa_check(dn42_roa_flap_v6, net, bgp_path.last) = ROA_INVALID then return false;
     if !dn42_ix_check_community() then return false;
     if is_self_dn42_net_v6() then {
-        bgp_community.add((GEO_COMM_AS, DN42_REGION));
-        bgp_community.add((GEO_COMM_AS, DN42_COUNTRY));
+        bgp_community.add((GEO_COMM_AS, POP_REGION));
+        bgp_community.add((GEO_COMM_AS, POP_COUNTRY));
     }
     if !dn42_apply_export(peer_as, peer_region, peer_country) then return false;
     remove_confederation_as();
@@ -59,7 +59,7 @@ function dn42_ix_import_{{ af }}(int peer_region; int peer_country) {
 
 template bgp dn42_ixpeers {
     router id {{ derived_intra_loopback_v4 }};
-    local as DN42_OWNAS;
+    local as {{ route_domains.dn42.origin_as }};
     path metric 1;
 
     ipv4 {

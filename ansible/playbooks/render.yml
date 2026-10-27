@@ -61,14 +61,13 @@
             state: directory
             mode: "0755"
 
-        - name: Create base module directories
+        - name: Create mandatory intra module directories
           delegate_to: localhost
           ansible.builtin.file:
             path: "{{ node_output_dir }}/{{ item }}"
             state: directory
             mode: "0755"
           loop:
-            - dn42
             - intra
             - intra/ibgp
 
@@ -78,7 +77,15 @@
             path: "{{ node_output_dir }}/iana"
             state: directory
             mode: "0755"
-          when: iana.enabled | default(false)
+          when: bird_domain_files.iana | length > 0
+
+        - name: Create DN42 module directory
+          delegate_to: localhost
+          ansible.builtin.file:
+            path: "{{ node_output_dir }}/dn42"
+            state: directory
+            mode: "0755"
+          when: bird_domain_files.dn42 | length > 0
 
         - name: Create DN42 peers directory
           delegate_to: localhost
@@ -87,7 +94,7 @@
             state: directory
             mode: "0755"
           when:
-            - dn42.enabled | default(false)
+            - bird_domain_files.dn42 | length > 0
             - (dn42.peers | default([])) | length > 0
 
         - name: Render root BIRD files
@@ -116,11 +123,13 @@
             src: ../templates/bird/dn42/peer.conf.j2
             dest: "{{ node_output_dir }}/dn42/peers/dn42_{{ peer.asn }}.conf"
             mode: "0644"
-          loop: "{{ dn42.peers | default([]) }}"
+          loop: "{{ effective_dn42_peer_sessions | default([]) }}"
           loop_control:
-            loop_var: peer
-            label: "dn42_{{ peer.asn }}"
-          when: dn42.enabled | default(false)
+            loop_var: peer_bundle
+            label: "dn42_{{ peer_bundle.peer.asn }}"
+          vars:
+            peer: "{{ peer_bundle.peer }}"
+          when: bird_domain_files.dn42 | length > 0
 
         - name: Render intra module files
           delegate_to: localhost
@@ -149,7 +158,7 @@
           diff: false
           no_log: true
           loop: "{{ bird_domain_files.iana }}"
-          when: iana.enabled | default(false)
+          when: bird_domain_files.iana | length > 0
 
         - name: Load fixed IRR snapshot
           delegate_to: localhost
@@ -157,7 +166,7 @@
             file: "{{ inventory_dir }}/irr/{{ inventory_hostname }}.json"
             name: irr_snapshot
           when:
-            - iana.enabled | default(false)
+            - bird_domain_files.iana | length > 0
             - (iana.peers | default([]) | length > 0) or (iana.downstreams | default([]) | length > 0)
 
         - name: Render fixed IRR AS-SETs
@@ -167,7 +176,7 @@
             dest: "{{ node_output_dir }}/iana_downstream_whitelist.conf"
             mode: '0644'
           when:
-            - iana.enabled | default(false)
+            - bird_domain_files.iana | length > 0
             - (iana.peers | default([]) | length > 0) or (iana.downstreams | default([]) | length > 0)
 
         - name: Validate complete staged BIRD configuration

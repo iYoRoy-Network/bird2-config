@@ -48,7 +48,7 @@
         - name: Restrict materialization to target peer
           ansible.builtin.set_fact:
             dn42: "{{ dn42 | default({}) | combine({'enabled': true, 'peers': [target_peer]}) }}"
-            intra: {enabled: false, auto_confed_peers: [], explicit_confed_peers: []}
+            intra: {auto_confed_peers: [], explicit_confed_peers: []}
             wireguard: "{{ wireguard | combine({'standalone_interfaces': []}) }}"
           when: peer_present | bool
 
@@ -85,7 +85,7 @@
             dest: "{{ peer_stage.path }}/bird/dn42/peers/{{ peer_interface }}.conf"
             mode: '0644'
           vars:
-            peer: "{{ target_peer }}"
+            peer_bundle: "{{ effective_dn42_peer_sessions | first }}"
           when: peer_present | bool and apply_bird | default(true) | bool
 
         - name: Upload shared deployment helpers
