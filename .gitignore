@@ -5,5 +5,6 @@ secrets.conf
 .rendered-network/
 *-wg/
 ansible/secrets/
+ansible/irr/
 __pycache__/
 *.py[cod]
