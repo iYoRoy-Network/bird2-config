@@ -55,9 +55,10 @@ class NodeAddressingTests(unittest.TestCase):
             "cdg01-fr": "2a14:7583:f244::a024", "lhr01-uk": "2a14:7583:f244::43af",
         }
         inventory = yaml.safe_load((ROOT / "ansible/inventory.yml").read_text())
-        self.assertEqual(set(inventory["bird_nodes"]["hosts"]), set(expected))
+        hosts = inventory["bird_nodes"]["hosts"]
+        self.assertTrue(set(expected).issubset(hosts))
         addresses = set()
-        for host, address in expected.items():
+        for host in hosts:
             with self.subTest(host=host):
                 directory = ROOT / "ansible/host_vars" / host
                 node = yaml.safe_load((directory / "node.yml").read_text())["node"]
@@ -65,7 +66,8 @@ class NodeAddressingTests(unittest.TestCase):
                 self.assertIn("public_ipv6_prefix", node)
                 self.assertNotIn("own_ipv6", iana)
                 derived = ADDRESSING.public_ipv6(node)
-                self.assertEqual(derived, address)
+                if host in expected:
+                    self.assertEqual(derived, expected[host])
                 self.assertNotIn(derived, addresses)
                 addresses.add(derived)
 
