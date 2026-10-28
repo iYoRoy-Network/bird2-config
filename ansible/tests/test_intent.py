@@ -70,8 +70,16 @@ class IntentTests(unittest.TestCase):
                 for domain in ("iana", "dn42"):
                     self.assertTrue(config[domain]["enabled"])
                 self.assertIn("intra", config)
-                self.assertEqual(config["iana"]["static"]["advertise_routes"],
-                                 ["2a14:7583:f240::/43", "{{ iana_global.anycast_net_v6 }}"])
+                self.assertEqual(
+                    config["iana"]["static"]["advertise_routes"],
+                    [
+                        {
+                            "prefix": "2a14:7583:f240::/43",
+                            "communities": "{{ iana_global.export_to_continent_communities.EUROPE }}",
+                        },
+                        "{{ iana_global.anycast_net_v6 }}",
+                    ],
+                )
                 intent = INTENT.materialize_intent(config, hosts, host, defaults)
                 self.assertEqual(len(intent["wireguard_interfaces"]), len(links))
                 self.assertEqual(len(intent["intra_ibgp_sessions"]), len(links))
@@ -86,6 +94,51 @@ class IntentTests(unittest.TestCase):
                     for family in ("ipv4", "ipv6"):
                         self.assertEqual(session[family], {"import_policy": policy, "export_policy": policy})
                 self.assertEqual(INTENT.irr_queries(config["iana"]), {})
+
+    def test_regional_aggregates_use_continent_export_communities(self):
+        domains = yaml.safe_load((ROOT / "ansible/group_vars/all/domains.yml").read_text())
+        communities = domains["iana_global"]["export_to_continent_communities"]
+        expected_asia_regions = {
+            "GEO_REGION_ASIA_SOUTH",
+            "GEO_REGION_ASIA_SOUTHEAST",
+            "GEO_REGION_ASIA_EAST",
+            "GEO_REGION_ASIA_NORTH",
+            "GEO_REGION_ASIA_WEST",
+            "GEO_REGION_ASIA_CENTRAL",
+        }
+        self.assertEqual(
+            {entry[2] for entry in communities["ASIA"] if entry[1] == "COMM_FN_ONLY_REGION"},
+            expected_asia_regions,
+        )
+        self.assertIn([205369, "COMM_FN_DENY_AS", 6939], communities["ASIA"])
+        self.assertEqual(
+            communities["EUROPE"],
+            [[205369, "COMM_FN_ONLY_REGION", "GEO_REGION_EUROPE"]],
+        )
+
+        tagged_prefixes = {
+            "2a14:7583:f220::/43": ("ASIA", 0),
+            "2a14:7583:f240::/43": ("EUROPE", 0),
+        }
+        for directory in (ROOT / "ansible/host_vars").iterdir():
+            iana_path = directory / "iana.yml"
+            if not iana_path.exists():
+                continue
+            iana = yaml.safe_load(iana_path.read_text().replace("\t", " "))["iana"]
+            for route in iana.get("static", {}).get("advertise_routes", []):
+                if not isinstance(route, dict) or route.get("prefix") not in tagged_prefixes:
+                    continue
+                prefix = route["prefix"]
+                continent, count = tagged_prefixes[prefix]
+                self.assertEqual(
+                    route.get("communities"),
+                    "{{ iana_global.export_to_continent_communities.%s }}" % continent,
+                    "%s in %s must use the %s export policy" % (prefix, directory.name, continent),
+                )
+                tagged_prefixes[prefix] = (continent, count + 1)
+
+        self.assertEqual(tagged_prefixes["2a14:7583:f220::/43"][1], 7)
+        self.assertEqual(tagged_prefixes["2a14:7583:f240::/43"][1], 3)
 
     def test_domain_enable_and_file_selection(self):
         self.assertEqual(INTENT.bird_modules({"dn42": {"enabled": False, "peers": [{}]}})["dn42"], [])

@@ -21,8 +21,7 @@ iana:
   static:
     advertise_routes:
     - prefix: "2a14:7583:f220::/43"
-      communities:
-        - [205369, COMM_FN_DENY_AS, 6939]
+      communities: "{{ iana_global.export_to_continent_communities.ASIA }}"
     - "{{ iana_global.anycast_net_v6 }}"
     extra_routes:
     - protocol: iana_static
