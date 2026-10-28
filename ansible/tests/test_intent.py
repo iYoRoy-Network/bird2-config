@@ -113,7 +113,10 @@ class IntentTests(unittest.TestCase):
         self.assertIn([205369, "COMM_FN_DENY_AS", 6939], communities["ASIA"])
         self.assertEqual(
             communities["EUROPE"],
-            [[205369, "COMM_FN_ONLY_REGION", "GEO_REGION_EUROPE"]],
+            [
+                [205369, "COMM_FN_ONLY_REGION", "GEO_REGION_EUROPE"],
+                [205369, "COMM_FN_DENY_AS", 6939],
+            ],
         )
 
         tagged_prefixes = {
