@@ -23,10 +23,9 @@
   ansible.builtin.assert:
     quiet: true
     that:
-      - dn42.enabled | default(false) | bool
       - intra.flapalerted.server_node | default(intra_global.flapalerted.server_node, true) in hostvars
       - inventory_hostname != (intra.flapalerted.server_node | default(intra_global.flapalerted.server_node, true))
     fail_msg: >-
       Flapalerted on {{ inventory_hostname }} needs a different server_node that
-      exists in hostvars and requires the DN42 module to be enabled.
+      exists in hostvars.
   when: intra.flapalerted.enabled | default(false)

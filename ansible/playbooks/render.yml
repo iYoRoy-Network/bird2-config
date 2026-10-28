@@ -167,7 +167,7 @@
             name: irr_snapshot
           when:
             - bird_domain_files.iana | length > 0
-            - (iana.peers | default([]) | length > 0) or (iana.downstreams | default([]) | length > 0)
+            - (iana | irr_queries) | length > 0
 
         - name: Render fixed IRR AS-SETs
           delegate_to: localhost
@@ -177,7 +177,7 @@
             mode: '0644'
           when:
             - bird_domain_files.iana | length > 0
-            - (iana.peers | default([]) | length > 0) or (iana.downstreams | default([]) | length > 0)
+            - (iana | irr_queries) | length > 0
 
         - name: Validate complete staged BIRD configuration
           delegate_to: localhost

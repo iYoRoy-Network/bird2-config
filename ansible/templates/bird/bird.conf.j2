@@ -31,10 +31,11 @@ protocol device {
 
 {% set _iana_has_peers = (iana.peers | default([]) | length) > 0 %}
 {% set _iana_has_downstreams = (iana.downstreams | default([]) | length) > 0 %}
+{% set _iana_irr_queries = iana | irr_queries %}
 
 {# ── Render includes ── #}
 {% set root_includes = ['filter.conf'] %}
-{% if domain_files.iana | length > 0 and (_iana_has_peers or _iana_has_downstreams) %}
+{% if domain_files.iana | length > 0 and _iana_irr_queries %}
 {% set root_includes = root_includes + ['iana_downstream_whitelist.conf'] %}
 {% endif %}
 {% set root_includes = root_includes + (bird.extra_root_includes | default([])) %}

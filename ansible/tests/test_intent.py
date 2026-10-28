@@ -143,6 +143,13 @@ class IntentTests(unittest.TestCase):
         self.assertEqual(tagged_prefixes["2a14:7583:f220::/43"][1], 7)
         self.assertEqual(tagged_prefixes["2a14:7583:f240::/43"][1], 3)
 
+    def test_irr_queries_ignore_peers_without_as_set(self):
+        iana = {
+            "peers": [{"neighbor": {"asn": 218418}, "as_set": "none"}],
+            "downstreams": [],
+        }
+        self.assertEqual(INTENT.irr_queries(iana), {})
+
     def test_domain_enable_and_file_selection(self):
         self.assertEqual(INTENT.bird_modules({"dn42": {"enabled": False, "peers": [{}]}})["dn42"], [])
         self.assertEqual(INTENT.bird_modules({"dn42": {"enabled": True, "rpki": {"enabled": False}}})["dn42"],

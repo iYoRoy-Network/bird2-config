@@ -3,6 +3,10 @@
 {% set _flap_server_v6 = hostvars[_flap_server_node].node | intra_loopback_v6(intra_global) %}
 {% set _flap_bgp_port = flap.bgp_port | default(intra_global.flapalerted.bgp_port) %}
 {% set _flap_rpki_port = flap.rpki_port | default(intra_global.flapalerted.rpki_port) %}
+{% if not (dn42.enabled | default(false)) %}
+roa4 table dn42_roa_flap_v4;
+roa6 table dn42_roa_flap_v6;
+{% endif %}
 protocol bgp intra_flapalerted {
     router id {{ derived_intra_loopback_v4 }};
     local {{ derived_intra_loopback_v6 }} as {{ route_domains.dn42.origin_as }};

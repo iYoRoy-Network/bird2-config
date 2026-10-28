@@ -22,6 +22,11 @@ SPEC.loader.exec_module(GEO)
 SPEC_INTENT = importlib.util.spec_from_file_location("intent", ROOT / "ansible/playbooks/filter_plugins/intent.py")
 INTENT = importlib.util.module_from_spec(SPEC_INTENT)
 SPEC_INTENT.loader.exec_module(INTENT)
+SPEC_ADDRESSING = importlib.util.spec_from_file_location(
+    "node_addressing", ROOT / "ansible/playbooks/filter_plugins/node_addressing.py"
+)
+ADDRESSING = importlib.util.module_from_spec(SPEC_ADDRESSING)
+SPEC_ADDRESSING.loader.exec_module(ADDRESSING)
 
 
 def variables():
@@ -40,6 +45,7 @@ def render(name, **values):
     )
     env.filters.update(GEO.FilterModule().filters())
     env.filters.update(INTENT.FilterModule().filters())
+    env.filters.update(ADDRESSING.FilterModule().filters())
     env.filters["combine"] = lambda left, right: {**left, **right}
     return env.get_template(f"bird/{name}.j2").render(**(variables() | values))
 
@@ -68,6 +74,38 @@ class GeoRenderingTests(unittest.TestCase):
         self.assertIn("define POP_COUNTRY = GEO_COUNTRY_UNITED_STATES;", output)
         self.assertNotIn("define DN42_OWNAS", output)
         self.assertNotIn("define GEO_COMM_AS", output)
+
+    def test_peer_without_as_set_does_not_include_irr_whitelist(self):
+        context = {
+            "node": {"geo": {"region": "EUROPE", "country": "GERMANY"}},
+            "iana": {"enabled": True, "router_id": "192.0.2.1", "peers": [{
+                "neighbor": {"asn": 218418}, "as_set": "none",
+            }]},
+            "intra": {},
+            "bird": {},
+            "derived_intra_loopback_v4": "100.64.32.5",
+        }
+        output = render("bird.conf", **context)
+        self.assertNotIn('include "iana_downstream_whitelist.conf";', output)
+
+    def test_flapalerted_is_independent_of_dn42_module(self):
+        context = {
+            "intra": {"flapalerted": {"enabled": True}},
+            "hostvars": {"hkg01-hk": {"node": {
+                "tier": 9, "region": 1, "node_token": "d576",
+            }}},
+            "derived_intra_loopback_v4": "100.64.32.5",
+            "derived_intra_loopback_v6": "fd18:3e15:61d0:ffff:3:2::a4b1",
+            "route_domains": {"dn42": {"origin_as": 4242422024}},
+        }
+        disabled = render("intra/flapalerted.conf", dn42={"enabled": False}, **context)
+        self.assertIn("roa4 table dn42_roa_flap_v4;", disabled)
+        self.assertIn("roa6 table dn42_roa_flap_v6;", disabled)
+        self.assertIn("protocol bgp intra_flapalerted", disabled)
+
+        enabled = render("intra/flapalerted.conf", dn42={"enabled": True}, **context)
+        self.assertNotIn("roa4 table dn42_roa_flap_v4;", enabled)
+        self.assertNotIn("roa6 table dn42_roa_flap_v6;", enabled)
 
     def test_dn42_session_geo_override_and_disabled_af(self):
         peer = {
