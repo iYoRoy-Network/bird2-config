@@ -205,6 +205,8 @@ def main():
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--interface", help="Apply only this interface; preserve all others")
     parser.add_argument("--node", help="Require a sealed artifact for this node")
+    parser.add_argument("--ignore-start-failure", action="append", default=[],
+                        help="Continue deployment if starting this interface fails")
     args = parser.parse_args()
 
     staging_dir = Path(args.staging_dir)
@@ -259,6 +261,7 @@ def main():
         "restored": False,
         "service_results": service_results,
         "service_failures": service_failures,
+        "ignored_service_failures": [],
     }
 
     try:
@@ -272,6 +275,10 @@ def main():
             result = apply_service_action(args.service_manager, name, interface, False)
             service_results.append(result)
             if result.get("failed"):
+                if name == "start" and interface in args.ignore_start_failure:
+                    result["ignored_failure"] = True
+                    summary["ignored_service_failures"].append(result)
+                    return
                 service_failures.append(result)
                 raise RuntimeError("WireGuard %s failed for %s" % (name, interface))
 

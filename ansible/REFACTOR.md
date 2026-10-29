@@ -16,6 +16,11 @@ WireGuard and BIRD. A successful tunnel update remains applied if a subsequent
 BIRD update fails. Inspect the failure before retrying. Rollback can also fail
 if the host or service becomes unavailable; recovery results must be checked.
 
+`deploy.wireguard.ignore_start_failures` may list interface names whose service
+start failures should be reported but not abort a full or scoped deployment.
+Their configs remain installed and enabled, and later deployments retry them.
+This does not ignore validation, upload, stop, or other service failures.
+
 Single-peer deployment modifies only its named peer, never other peer files.
 It requires the current shared BIRD functions to have been deployed separately.
 Production deployment is never part of the local verification workflow.
