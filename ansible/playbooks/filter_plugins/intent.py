@@ -8,10 +8,37 @@ from ansible.errors import AnsibleFilterError
 
 
 INTRA_POLICIES = {"default", "full", "iana_full", "dn42_full", "3377confed_iana"}
+LEGACY_CONFED_PROTOCOL_PREFIX = "intra_ibgp_"
+CONFED_PROTOCOL_PREFIX = "intra_confed_"
 
 
-def intra_session(session):
+def _confed_protocol_for_node(node):
+    """Return the stable protocol ID for an automatic intra peer."""
+    label = str(node).split("-", 1)[0]
+    return CONFED_PROTOCOL_PREFIX + label
+
+
+def _confed_protocol_for_file(filename):
+    """Return a protocol ID for an explicit session when only its file is set."""
+    basename = str(filename).rsplit("/", 1)[-1]
+    stem = re.sub(r"\.conf$", "", basename)
+    return CONFED_PROTOCOL_PREFIX + stem
+
+
+def _normalize_intra_protocol(protocol, default=None):
+    protocol = default if protocol is None else protocol
+    if not isinstance(protocol, str) or not protocol:
+        raise AnsibleFilterError("Intra session requires a protocol name")
+    if protocol.startswith(LEGACY_CONFED_PROTOCOL_PREFIX):
+        return CONFED_PROTOCOL_PREFIX + protocol[len(LEGACY_CONFED_PROTOCOL_PREFIX):]
+    return protocol
+
+
+def intra_session(session, default_protocol=None):
     result = deepcopy(session)
+    protocol = result.get("protocol", default_protocol)
+    if protocol is not None:
+        result["protocol"] = _normalize_intra_protocol(protocol)
     for family in ("ipv4", "ipv6"):
         channel = result.setdefault(family, {})
         for direction in ("import", "export"):
@@ -182,8 +209,11 @@ def materialize_intent(config, hostvars, hostname, defaults):
             tunnel_peer["endpoint"] = endpoint
         interface = {key: wg[key] for key in ("address_mode", "listen_port", "table", "post_up", "fwmark", "mtu", "private_key_ref", "pre_up", "pre_down", "post_down", "address") if key in wg}
         interfaces.append({**interface, "name": peer["interface"], "peer": tunnel_peer})
-        sessions.append(intra_session({**peer.get("bgp", {}),
-                                       "neighbor": {"node": peer["node"], "interface": peer["interface"]}}))
+        sessions.append(intra_session(
+            {**peer.get("bgp", {}),
+             "neighbor": {"node": peer["node"], "interface": peer["interface"]}},
+            default_protocol=_confed_protocol_for_node(peer["node"]),
+        ))
         validate_intra_domains(sessions[-1], dn42.get("enabled", False),
                                config.get("iana", {}).get("enabled", False))
     for peer in dn42.get("peers", []) if dn42.get("enabled", False) else []:
@@ -201,7 +231,11 @@ def materialize_intent(config, hostvars, hostname, defaults):
             interface.setdefault("post_down", []).insert(0, "ip %s addr del %s/%s dev %%i || true" % (family, peer["src"], length))
         interfaces.append({**interface, "name": wg.get("interface", "dn42_%s" % peer["asn"]), "peer": tunnel_peer})
     interfaces += deepcopy(wireguard.get("standalone_interfaces") or [])
-    explicit_sessions = [intra_session(session) for session in intra.get("explicit_confed_peers", [])]
+    explicit_sessions = []
+    for session in intra.get("explicit_confed_peers", []):
+        default_protocol = (_confed_protocol_for_file(session["file"])
+                            if "protocol" not in session and "file" in session else None)
+        explicit_sessions.append(intra_session(session, default_protocol=default_protocol))
     for session in explicit_sessions:
         validate_intra_domains(session, dn42.get("enabled", False),
                                config.get("iana", {}).get("enabled", False))

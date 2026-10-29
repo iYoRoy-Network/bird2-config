@@ -85,7 +85,7 @@ class IntentTests(unittest.TestCase):
                 self.assertEqual(len(intent["intra_ibgp_sessions"]), len(links))
                 for session, interface, (remote, policy, port) in zip(
                         intent["intra_ibgp_sessions"], intent["wireguard_interfaces"], links):
-                    self.assertEqual(session["protocol"], "intra_ibgp_" + remote)
+                    self.assertEqual(session["protocol"], "intra_confed_" + remote)
                     self.assertEqual(interface["name"], "intra_" + remote)
                     self.assertEqual(interface["listen_port"], port)
                     endpoint_host = hosts[session["neighbor"]["node"]]["node"]["wireguard_endpoint_host"]
@@ -94,6 +94,41 @@ class IntentTests(unittest.TestCase):
                     for family in ("ipv4", "ipv6"):
                         self.assertEqual(session[family], {"import_policy": policy, "export_policy": policy})
                 self.assertEqual(INTENT.irr_queries(config["iana"]), {})
+
+    def test_confederation_protocol_names_are_derived_and_migrated(self):
+        self.assertEqual(
+            INTENT.intra_session({"protocol": "intra_ibgp_hkg02"})["protocol"],
+            "intra_confed_hkg02",
+        )
+        self.assertEqual(
+            INTENT.intra_session({}, default_protocol="intra_confed_hkg02")["protocol"],
+            "intra_confed_hkg02",
+        )
+        self.assertEqual(
+            INTENT.intra_session({"protocol": "custom_confed_link"})["protocol"],
+            "custom_confed_link",
+        )
+
+        hosts = {
+            "fra01-de": {
+                "node": {"wireguard_endpoint_host": "fra01.example"},
+                "intra": {"auto_confed_peers": [{
+                    "node": "fra03-de", "wireguard": {"listen_port": 10325},
+                }]},
+            },
+            "fra03-de": {
+                "node": {"wireguard_endpoint_host": "fra03.example"},
+                "intra": {"auto_confed_peers": [{
+                    "node": "fra01-de", "interface": "intra_fra01",
+                    "wireguard": {"public_key": "test-key", "listen_port": 50225},
+                    "bgp": {"file": "fra01.conf"},
+                }]},
+            },
+        }
+        intent = INTENT.materialize_intent(
+            hosts["fra03-de"], hosts, "fra03-de", {"intra": {}, "dn42": {}}
+        )
+        self.assertEqual(intent["intra_ibgp_sessions"][0]["protocol"], "intra_confed_fra01")
 
     def test_regional_aggregates_use_continent_export_communities(self):
         domains = yaml.safe_load((ROOT / "ansible/group_vars/all/domains.yml").read_text())
