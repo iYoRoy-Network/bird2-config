@@ -4,7 +4,6 @@ intra:
   auto_confed_peers:
     - node: fra02-de
       wireguard:
-        public_key: m7HQia4TdZB2vyI4ajcSlKv9Y/qbhsKiz+HDvsx6nno=
         fwmark: '4242'
         address_mode: intra_local
         persistent_keepalive: 10
@@ -17,7 +16,6 @@ intra:
           export_policy: dn42_full
     - node: fra03-de
       wireguard:
-        public_key: 1d3RCzLqIC/m9X3Fq4Za1Xp88lQ2mxYq7tZ1PfK3CVc=
         fwmark: '4242'
         address_mode: intra_local
         persistent_keepalive: 10
@@ -30,7 +28,6 @@ intra:
           export_policy: full
     - node: cdg01-fr
       wireguard:
-        public_key: vLZLdiJrDyGpUIY5y/qR5XIvyaWCcTM4uk9Y6kdIKk8=
         fwmark: '4242'
         address_mode: intra_local
       bgp:
@@ -42,7 +39,6 @@ intra:
           export_policy: full
     - node: lax01-us
       wireguard:
-        public_key: As0rZo5b9Bwt4loPGl6iSdtOqkd2p6ExK/Xyoy9OmTU=
         fwmark: '4242'
         address_mode: intra_local
       bgp:
@@ -54,7 +50,6 @@ intra:
           export_policy: dn42_full
     - node: tyo01-jp
       wireguard:
-        public_key: Sh62ZCxnEcXyLq49mLP1jF4C2vWKhKMxjtZHxVUAQg4=
         fwmark: '4242'
         address_mode: intra_local
       bgp:

@@ -6,7 +6,9 @@ node:
   geo:
     region: ASIA_EAST
     country: HONG_KONG
-  wireguard_endpoint_host: ipv4.hkg01-hk.ecs.iyoroy-infra.top
+  wireguard:
+    endpoint_host: ipv4.hkg01-hk.ecs.iyoroy-infra.top
+    public_key: p8K4/FOb+KjT96Xc9efqHbCp60sNefFf2kZSmokzDHs=
   node_token: "d576"
   public_ipv6_prefix: "2a14:7583:f224::/48"
   peering:

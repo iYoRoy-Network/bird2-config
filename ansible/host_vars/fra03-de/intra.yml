@@ -4,7 +4,6 @@ intra:
   auto_confed_peers:
     - node: fra01-de
       wireguard:
-        public_key: 4zEFOrqHdIDPcjvu6NwbE1AAYBH1bA+SAowysX5fRT4=
         address_mode: intra_local
       bgp:
         ipv4:

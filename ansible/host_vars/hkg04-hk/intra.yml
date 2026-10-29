@@ -4,7 +4,6 @@ intra:
   auto_confed_peers:
     - node: hkg02-hk
       wireguard:
-        public_key: bg+KnzVupBrOQntHFFVzvBx+3sqYVoyJRantT6m5fm8=
         listen_port: 10225
         fwmark: '4242'
         address_mode: intra_local
@@ -17,7 +16,6 @@ intra:
           export_policy: full
     - node: hkg03-hk
       wireguard:
-        public_key: gNiB+ZAfvxIthwuCLUxZ9QS/RYWyp0OW4rsdODm+NXc=
         listen_port: 10231
         fwmark: '4242'
         address_mode: intra_local
@@ -30,7 +28,6 @@ intra:
           export_policy: full
     - node: pvg01-cn
       wireguard:
-        public_key: VdHU69ZeCaaq2V7Hg362YG+9dZ97DHYZxW0G7/Rs5FY=
         listen_port: 13201
         fwmark: '4242'
         address_mode: intra_local

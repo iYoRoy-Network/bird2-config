@@ -47,8 +47,9 @@ router-id macro layer is no longer part of the rendered configuration.
 
 PoP geography belongs to `node.geo`. Peer/session geography remains independent.
 `node.region` is the existing addressing/topology index, not a community region.
-`node.wireguard_endpoint_host` is the tunnel endpoint hostname, independent of
-SSH management inventory. Public node addresses use prefix + token exclusively.
+`node.wireguard.endpoint_host` is the tunnel endpoint hostname, independent of
+SSH management inventory. It sits with the node's WireGuard public key. Public
+node addresses use prefix + token exclusively.
 External aggregates remain explicit in `iana.static.advertise_routes`.
 
 ## Normalized Intent
@@ -67,6 +68,11 @@ confederation ASN: `10000 + (remote ASN mod 10000)`. A peer's explicit
 must keep explicit ports. Endpoint ports are resolved from the reciprocal
 peer's effective listener, so NAT mappings and automatically derived ports
 both work without duplicating endpoint values.
+
+Each node's intra WireGuard public key is owned by `node.wireguard.public_key`.
+Automatic intra peers reference that key through their node name; do not copy
+the remote key into each peer entry. The separate `node.peering.publickey`
+field remains part of the external peering metadata.
 
 `wireguard.standalone_interfaces` is for transports independent of managed
 peers. It remains supported and is validated alongside generated interfaces.

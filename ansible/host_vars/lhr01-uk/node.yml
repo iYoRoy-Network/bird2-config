@@ -6,7 +6,9 @@ node:
   geo:
     region: EUROPE
     country: UNITED_KINGDOM
-  wireguard_endpoint_host: ipv4.lhr01-uk.ecs.iyoroy-infra.top
+  wireguard:
+    endpoint_host: ipv4.lhr01-uk.ecs.iyoroy-infra.top
+    public_key: K1iZgKAHPogRR1glXTwd3FXqbKKAomilYhPKp5CbX1A=
   node_token: "43af"
   public_ipv6_prefix: "2a14:7583:f244::/48"
   peering:

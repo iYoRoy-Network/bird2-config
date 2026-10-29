@@ -4,7 +4,6 @@ intra:
   auto_confed_peers:
     - node: fra01-de
       wireguard:
-        public_key: 4zEFOrqHdIDPcjvu6NwbE1AAYBH1bA+SAowysX5fRT4=
         listen_port: 50225
         address_mode: intra_local
       bgp:
@@ -16,12 +15,10 @@ intra:
           export_policy: full
     - node: hkg02-hk
       wireguard:
-        public_key: bg+KnzVupBrOQntHFFVzvBx+3sqYVoyJRantT6m5fm8=
         listen_port: 50226
         address_mode: intra_local
     - node: lax01-us
       wireguard:
-        public_key: As0rZo5b9Bwt4loPGl6iSdtOqkd2p6ExK/Xyoy9OmTU=
         listen_port: 50227
         address_mode: intra_local
       bgp:
@@ -33,12 +30,10 @@ intra:
           export_policy: dn42_full
     - node: tyo01-jp
       wireguard:
-        public_key: Sh62ZCxnEcXyLq49mLP1jF4C2vWKhKMxjtZHxVUAQg4=
         listen_port: 50228
         address_mode: intra_local
     - node: lhr01-uk
       wireguard:
-        public_key: K1iZgKAHPogRR1glXTwd3FXqbKKAomilYhPKp5CbX1A=
         listen_port: 50229
         address_mode: intra_local
       bgp:

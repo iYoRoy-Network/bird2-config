@@ -6,7 +6,9 @@ node:
   geo:
     region: NA_WEST
     country: UNITED_STATES
-  wireguard_endpoint_host: ipv4.lax-us.ecs.iyoroy-infra.top
+  wireguard:
+    endpoint_host: ipv4.lax-us.ecs.iyoroy-infra.top
+    public_key: As0rZo5b9Bwt4loPGl6iSdtOqkd2p6ExK/Xyoy9OmTU=
   node_token: "de75"
   public_ipv6_prefix: "2a14:7583:f284::/48"
   peering:

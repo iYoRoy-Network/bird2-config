@@ -4,7 +4,6 @@ intra:
   auto_confed_peers:
     - node: hkg02-hk
       wireguard:
-        public_key: bg+KnzVupBrOQntHFFVzvBx+3sqYVoyJRantT6m5fm8=
         fwmark: '4242'
         address_mode: intra_local
       bgp:
@@ -16,7 +15,6 @@ intra:
           export_policy: full
     - node: hkg04-hk
       wireguard:
-        public_key: 1tn6T2xi+zEnNi8X7ssGH9M3WOeq1xDjZNX3mMkO7Qk=
         fwmark: '4242'
         address_mode: intra_local
       bgp:

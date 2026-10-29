@@ -4,7 +4,6 @@ intra:
   auto_confed_peers:
     - node: fra01-de
       wireguard:
-        public_key: 4zEFOrqHdIDPcjvu6NwbE1AAYBH1bA+SAowysX5fRT4=
         address_mode: intra_local
       bgp:
         ipv4:
@@ -15,7 +14,6 @@ intra:
           export_policy: dn42_full
     - node: cdg01-fr
       wireguard:
-        public_key: vLZLdiJrDyGpUIY5y/qR5XIvyaWCcTM4uk9Y6kdIKk8=
         address_mode: intra_local
       bgp:
         ipv4:
@@ -26,7 +24,6 @@ intra:
           export_policy: dn42_full
     - node: hkg02-hk
       wireguard:
-        public_key: bg+KnzVupBrOQntHFFVzvBx+3sqYVoyJRantT6m5fm8=
         address_mode: intra_local
       bgp:
         ipv4:
@@ -37,7 +34,6 @@ intra:
           export_policy: dn42_full
     - node: tyo01-jp
       wireguard:
-        public_key: Sh62ZCxnEcXyLq49mLP1jF4C2vWKhKMxjtZHxVUAQg4=
         address_mode: intra_local
       bgp:
         ipv4:

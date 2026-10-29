@@ -251,13 +251,27 @@ def materialize_intent(config, hostvars, hostname, defaults):
                       if entry["node"] == hostname]
         if len(reciprocal) != 1:
             raise AnsibleFilterError("Expected one reciprocal link %s -> %s" % (peer["node"], hostname))
-        wg = {**defaults["intra"], **peer.get("wireguard", {})}
+        peer_wireguard = peer.get("wireguard", {})
+        if not isinstance(peer_wireguard, dict):
+            raise AnsibleFilterError("Invalid intra WireGuard settings for %s" % hostname)
+        remote_wireguard = remote.get("node", {}).get("wireguard", {})
+        if not isinstance(remote_wireguard, dict):
+            raise AnsibleFilterError("Invalid node.wireguard settings for intra peer %s" % peer["node"])
+        remote_public_key = remote_wireguard.get("public_key")
+        if not remote_public_key:
+            raise AnsibleFilterError(
+                "Set node.wireguard.public_key for intra peer %s" % peer["node"])
+        configured_public_key = peer_wireguard.get("public_key")
+        if configured_public_key and configured_public_key != remote_public_key:
+            raise AnsibleFilterError(
+                "Intra peer %s public_key does not match node.wireguard.public_key" % peer["node"])
+        wg = {**defaults["intra"], **peer_wireguard, "public_key": remote_public_key}
         wg["listen_port"] = _intra_listen_port(hostname, peer, hostvars, intra_global)
-        endpoint_host = remote.get("node", {}).get("wireguard_endpoint_host")
+        endpoint_host = remote_wireguard.get("endpoint_host")
         endpoint = wg.get("endpoint")
         if endpoint is None and not wg.get("passive", False):
             if not endpoint_host:
-                raise AnsibleFilterError("Set node.wireguard_endpoint_host or explicit endpoint for %s" % peer["node"])
+                raise AnsibleFilterError("Set node.wireguard.endpoint_host or explicit endpoint for %s" % peer["node"])
             if ":" in endpoint_host:
                 endpoint_host = "[" + endpoint_host.strip("[]") + "]"
             remote_port = _intra_listen_port(peer["node"], reciprocal[0], hostvars, intra_global)

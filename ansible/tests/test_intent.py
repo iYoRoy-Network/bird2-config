@@ -94,7 +94,7 @@ class IntentTests(unittest.TestCase):
                     self.assertEqual(session["protocol"], "intra_confed_" + remote)
                     self.assertEqual(interface["name"], "intra_" + remote)
                     self.assertEqual(interface["listen_port"], port)
-                    endpoint_host = hosts[session["neighbor"]["node"]]["node"]["wireguard_endpoint_host"]
+                    endpoint_host = hosts[session["neighbor"]["node"]]["node"]["wireguard"]["endpoint_host"]
                     endpoint_port = 50229 if host == "lhr01-uk" else 11203
                     self.assertEqual(interface["peer"]["endpoint"], "%s:%s" % (endpoint_host, endpoint_port))
                     for family in ("ipv4", "ipv6"):
@@ -117,17 +117,19 @@ class IntentTests(unittest.TestCase):
 
         hosts = {
             "fra01-de": {
-                "node": {"wireguard_endpoint_host": "fra01.example"},
+                "node": {"wireguard": {"endpoint_host": "fra01.example",
+                                         "public_key": "fra01-key"}},
                 "intra": {"auto_confed_peers": [{
                     "node": "fra03-de", "interface": "legacy0",
-                    "wireguard": {"listen_port": 10325},
+                    "wireguard": {"listen_port": 10325, "public_key": "fra03-key"},
                 }]},
             },
             "fra03-de": {
-                "node": {"wireguard_endpoint_host": "fra03.example"},
+                "node": {"wireguard": {"endpoint_host": "fra03.example",
+                                         "public_key": "fra03-key"}},
                 "intra": {"auto_confed_peers": [{
                     "node": "fra01-de", "interface": "legacy_local",
-                    "wireguard": {"public_key": "test-key", "listen_port": 50225},
+                    "wireguard": {"public_key": "fra01-key", "listen_port": 50225},
                     "bgp": {
                         "file": "legacy.conf", "protocol": "legacy_protocol",
                     },
@@ -139,6 +141,7 @@ class IntentTests(unittest.TestCase):
         )
         session = intent["intra_ibgp_sessions"][0]
         self.assertEqual(intent["wireguard_interfaces"][0]["name"], "intra_fra01")
+        self.assertEqual(intent["wireguard_interfaces"][0]["peer"]["public_key"], "fra01-key")
         self.assertEqual(session["file"], "fra01.conf")
         self.assertEqual(session["protocol"], "intra_confed_fra01")
 
@@ -163,19 +166,19 @@ class IntentTests(unittest.TestCase):
         hosts = {
             "edge-a": {
                 "node": {"tier": 1, "region": 1, "node_id": 1,
-                         "wireguard_endpoint_host": "a.example"},
+                         "wireguard": {"endpoint_host": "a.example", "public_key": "a-key"}},
                 "intra": {"auto_confed_peers": [
                     {"node": "edge-b", "wireguard": {}},
                     {"node": "nat-node", "wireguard": {}}]},
             },
             "edge-b": {
                 "node": {"tier": 1, "region": 2, "node_id": 2,
-                         "wireguard_endpoint_host": "b.example"},
+                         "wireguard": {"endpoint_host": "b.example", "public_key": "b-key"}},
                 "intra": {"auto_confed_peers": [{"node": "edge-a", "wireguard": {}}]},
             },
             "nat-node": {
                 "node": {"tier": 1, "region": 3, "node_id": 3,
-                         "wireguard_endpoint_host": "nat.example"},
+                         "wireguard": {"endpoint_host": "nat.example", "public_key": "nat-key"}},
                 "intra": {"auto_confed_peers": [{"node": "edge-a", "wireguard": {}}]},
             },
         }
@@ -213,8 +216,31 @@ class IntentTests(unittest.TestCase):
                 explicit = "listen_port" in peer.get("wireguard", {})
                 self.assertEqual(explicit, hostname in manual_nodes,
                                  "%s -> %s has unexpected listen_port override" % (hostname, peer["node"]))
+                self.assertNotIn("public_key", peer.get("wireguard", {}),
+                                 "%s -> %s duplicates the node's public key" % (hostname, peer["node"]))
         for hostname, config in hosts.items():
-            INTENT.materialize_intent(config, hosts, hostname, defaults)
+            intent = INTENT.materialize_intent(config, hosts, hostname, defaults)
+            for peer, interface in zip(config.get("intra", {}).get("auto_confed_peers", []),
+                                       intent["wireguard_interfaces"]):
+                self.assertEqual(interface["peer"]["public_key"],
+                                 hosts[peer["node"]]["node"]["wireguard"]["public_key"])
+
+    def test_intra_peer_public_key_override_must_match_remote_node(self):
+        intra_global = intent_defaults()["intra_global"]
+        hosts = {
+            "node-a": {
+                "node": {"wireguard": {"endpoint_host": "a.example", "public_key": "a-key"}},
+                "intra": {"auto_confed_peers": [{"node": "node-b", "wireguard": {}}]},
+            },
+            "node-b": {
+                "node": {"wireguard": {"endpoint_host": "b.example", "public_key": "b-key"}},
+                "intra": {"auto_confed_peers": [{"node": "node-a", "wireguard": {}}]},
+            },
+        }
+        defaults = {"intra": {}, "dn42": {}, "intra_global": intra_global}
+        hosts["node-a"]["intra"]["auto_confed_peers"][0]["wireguard"]["public_key"] = "stale-key"
+        with self.assertRaisesRegex(AnsibleFilterError, "does not match node.wireguard.public_key"):
+            INTENT.materialize_intent(hosts["node-a"], hosts, "node-a", defaults)
 
     def test_regional_aggregates_use_continent_export_communities(self):
         domains = yaml.safe_load((ROOT / "ansible/group_vars/all/domains.yml").read_text())

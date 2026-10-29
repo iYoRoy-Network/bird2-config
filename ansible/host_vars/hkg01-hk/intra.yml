@@ -4,7 +4,6 @@ intra:
   auto_confed_peers:
     - node: hkg02-hk
       wireguard:
-        public_key: bg+KnzVupBrOQntHFFVzvBx+3sqYVoyJRantT6m5fm8=
         fwmark: '4242'
         address_mode: intra_local
       bgp:

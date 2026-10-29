@@ -6,7 +6,9 @@ node:
   geo:
     region: ASIA_EAST
     country: JAPAN
-  wireguard_endpoint_host: 114.111.176.35
+  wireguard:
+    endpoint_host: 114.111.176.35
+    public_key: lCx0qzITDvh2ZIfNppOttFnKFa16fCqDGn7mWufMzGE=
   node_token: "6f78"
   public_ipv6_prefix: "2a14:7583:f228::/48"
   peering:
