@@ -1,6 +1,8 @@
 ---
 # Per-domain global defaults (DN42 / IANA / intra confederation)
 route_domains:
+  intra:
+    origin_as: 4220240000
   dn42:
     origin_as: 4242422024
   iana:
@@ -42,7 +44,6 @@ intra_global:
     bgp_port: 1790
     rpki_port: 8083
   underlay_loopback_communities:
-    - [4242422024, COMM_FN_IDENTIFY, COMM_ORIGIN_CUSTOMER]
     - [COMM_FN_WELLKNOWN, COMM_WK_NO_EXPORT]
   dn42_overlay_route_communities:
     - [4242422024, COMM_FN_IDENTIFY, COMM_ORIGIN_CUSTOMER]

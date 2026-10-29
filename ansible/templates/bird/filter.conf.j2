@@ -11,8 +11,13 @@ function remove_confederation_as() {
 {% if dn42_on %}{% set route_origin_asns = route_origin_asns + [route_domains.dn42.origin_as] %}{% endif %}
 {% if iana_on %}{% set route_origin_asns = route_origin_asns + [route_domains.iana.origin_as] %}{% endif %}
 {% if bird_route_origin_asns is defined %}{% set route_origin_asns = bird_route_origin_asns %}{% endif %}
+function remove_intra_communities(){
+    bgp_large_community.delete([({{ route_domains.intra.origin_as }}, COMM_FN_IDENTIFY, *), ({{ route_domains.intra.origin_as }}, COMM_FN_GEO_SRC, *), ({{ route_domains.intra.origin_as }}, COMM_FN_GEO_DST, *)]);
+}
+
 function remove_internal_communities(){
-{% for own_as in route_origin_asns %}    bgp_large_community.delete([({{ own_as }}, COMM_FN_IDENTIFY, *), ({{ own_as }}, COMM_FN_GEO_SRC, *), ({{ own_as }}, COMM_FN_GEO_DST, *)]);
+    remove_intra_communities();
+{% for own_as in [route_domains.dn42.origin_as, route_domains.iana.origin_as] %}    bgp_large_community.delete([({{ own_as }}, COMM_FN_IDENTIFY, *), ({{ own_as }}, COMM_FN_GEO_SRC, *), ({{ own_as }}, COMM_FN_GEO_DST, *)]);
 {% endfor %}}
 
 # Strip only the controls implemented here, after the export actions run.

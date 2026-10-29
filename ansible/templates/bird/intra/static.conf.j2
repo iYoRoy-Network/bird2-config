@@ -15,15 +15,13 @@
 {% set dn42_overlay_communities = intra_global.dn42_overlay_route_communities | default([]) %}
 {% set iana_overlay_communities = intra_global.iana_overlay_route_communities | default([]) %}
 {% set overlay_default_communities = dn42_overlay_communities if dn42_on else iana_overlay_communities if iana_on else [] %}
-{% if underlay_loopback.communities is defined %}
-{% set underlay_loopback_communities = underlay_loopback.communities %}
-{% elif dn42_on %}
-{% set underlay_loopback_communities = intra_global.underlay_loopback_communities | default([]) %}
-{% elif iana_on %}
-{% set underlay_loopback_communities = iana_overlay_communities %}
-{% else %}
-{% set underlay_loopback_communities = [] %}
-{% endif %}
+{% set underlay_loopback_extra_communities = underlay_loopback.communities | default(intra_global.underlay_loopback_communities | default([])) %}
+{# Keep both legacy domain identities until every node accepts the intra identity. #}
+{% set underlay_loopback_communities = [
+    [route_domains.intra.origin_as, 'COMM_FN_IDENTIFY', 'COMM_ORIGIN_CUSTOMER'],
+    [route_domains.dn42.origin_as, 'COMM_FN_IDENTIFY', 'COMM_ORIGIN_CUSTOMER'],
+    [route_domains.iana.origin_as, 'COMM_FN_IDENTIFY', 'COMM_ORIGIN_CUSTOMER']
+] + underlay_loopback_extra_communities %}
 protocol static intra_static_v4{
 {% if underlay_loopback_enabled %}    route {{ derived_intra_loopback_v4 }}/32 reject{
 {{ render_communities(underlay_loopback_communities) }}    };

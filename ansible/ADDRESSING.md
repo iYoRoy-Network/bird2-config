@@ -16,7 +16,7 @@ such as Shanghai's `2a14:7583:f22d:2000::/56`.
 The prefix is an address allocation input, **not a route announcement**:
 
 - The overlay interface receives the generated address as /128.
-- `intra/static.conf` originates only that node's /128, with IANA identity
+- `intra/static.conf` originates only that node's /128, with intra identity
   and NO_EXPORT, for internal confederation transport.
 - The kernel policy uses the same generated address as its public source address.
 - Multiple nodes may share a prefix, but must have distinct resulting addresses.

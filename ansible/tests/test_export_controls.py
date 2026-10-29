@@ -175,12 +175,16 @@ class ExportControlTests(unittest.TestCase):
                 f"""
                 bgp_large_community.add(({own}, 644, 52));
                 bgp_large_community.add(({own}, 645, 1392));
+                bgp_large_community.add((4220240000, 2, 100));
+                bgp_large_community.add((4242422024, 2, 100));
+                bgp_large_community.add((205369, 2, 100));
                 bgp_large_community.add(({own}, 999, 123));
                 bgp_large_community.add((65002, 670, 6939));
                 bgp_community.add((65002, 100));
                 """,
                 present=(f"({own}, 999, 123)", "(65002, 670, 6939)", "(65002,100)"),
-                absent=(f"({own}, 2, 100)", f"({own}, 644, 52)", f"({own}, 645, 1392)"),
+                absent=(f"({own}, 2, 100)", f"({own}, 644, 52)", f"({own}, 645, 1392)",
+                        "(4220240000, 2, 100)", "(4242422024, 2, 100)", "(205369, 2, 100)"),
             )
             case("existing no-export", "bgp_community.add((65535, 65281));", False)
             case("existing no-advertise", "bgp_community.add((65535, 65282));", False)
@@ -193,6 +197,7 @@ class ExportControlTests(unittest.TestCase):
             bgp_path.prepend(65001);
             bgp_large_community.add((205369, 2, 100));
             bgp_large_community.add((4242422024, 2, 100));
+            bgp_large_community.add((4220240000, 2, 100));
             bgp_large_community.add((4242422024, 644, 41));
             bgp_large_community.add((205369, 670, 6939));
             bgp_large_community.add((205369, 650, 44));
@@ -207,7 +212,8 @@ class ExportControlTests(unittest.TestCase):
                      "(205369, 670, 6939)", "(205369, 650, 44)", "(205369, 661, 1392)",
                      "(4242422024, 691, 65002)", "(65002, 670, 6939)",
                      "(205369, 697, 52)", "(4242422024, 708, 1392)", "BGP.as_path: 65001"),
-            absent=("(205369, 2, 100)", "(4242422024, 2, 100)", "(4242422024, 644, 41)"),
+            absent=("(205369, 2, 100)", "(4242422024, 2, 100)", "(4220240000, 2, 100)",
+                    "(4242422024, 644, 41)"),
         )
 
         internal = {**context, "effective_intra_ibgp_sessions": [{"import_policy": "full", "export_policy": "full"}]}

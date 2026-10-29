@@ -1,6 +1,7 @@
 """Run with python3 -m unittest discover -s ansible/tests -v."""
 
 import importlib.util
+from ipaddress import ip_network
 from pathlib import Path
 import shutil
 import subprocess
@@ -107,6 +108,26 @@ class GeoRenderingTests(unittest.TestCase):
         self.assertNotIn("roa4 table dn42_roa_flap_v4;", enabled)
         self.assertNotIn("roa6 table dn42_roa_flap_v6;", enabled)
 
+    def test_intra_loopback_has_independent_identity(self):
+        output = render(
+            "intra/static.conf",
+            dn42={"enabled": False},
+            iana={"enabled": True},
+            intra={},
+            intra_global={
+                **variables()["intra_global"],
+                "underlay_loopback_communities": [["COMM_FN_WELLKNOWN", "COMM_WK_NO_EXPORT"]],
+            },
+            derived_intra_loopback_v4="100.64.32.5",
+            derived_intra_loopback_v6="fd18:3e15:61d0:ffff:3:2::a4b1",
+            derived_public_ipv6="2a14:7583:f244::a4b1",
+        )
+        underlay_routes = output.split("protocol static intra_static_v6", 1)[0]
+        self.assertIn("bgp_large_community.add((4220240000,COMM_FN_IDENTIFY,COMM_ORIGIN_CUSTOMER));", underlay_routes)
+        self.assertIn("bgp_large_community.add((4242422024,COMM_FN_IDENTIFY,COMM_ORIGIN_CUSTOMER));", underlay_routes)
+        self.assertIn("bgp_large_community.add((205369,COMM_FN_IDENTIFY,COMM_ORIGIN_CUSTOMER));", underlay_routes)
+        self.assertIn("bgp_community.add((COMM_FN_WELLKNOWN,COMM_WK_NO_EXPORT));", output)
+
     def test_dn42_session_geo_override_and_disabled_af(self):
         peer = {
             "asn": 65000, "geo": {"region": "NA_WEST", "country": "UNITED_STATES"},
@@ -167,6 +188,118 @@ class GeoRenderingTests(unittest.TestCase):
 
 @unittest.skipUnless(shutil.which("bird") and shutil.which("birdc"), "BIRD binaries required")
 class GeoRuntimeTests(unittest.TestCase):
+    def test_intra_underlay_marker_is_independent_of_enabled_domains(self):
+        values = variables()
+        defines = "\n".join(f"define COMM_{key} = {value};" for key, value in values["bgp_community"].items())
+        context = {
+            "dn42": {"enabled": False},
+            "iana": {"enabled": True},
+            "intra": {},
+            "effective_intra_ibgp_sessions": [{
+                "ipv4": {"import_policy": "full", "export_policy": "full"},
+                "ipv6": {"import_policy": "full", "export_policy": "full"},
+            }, {
+                "ipv4": {"import_policy": "3377confed_iana", "export_policy": "3377confed_iana"},
+                "ipv6": {"import_policy": "3377confed_iana", "export_policy": "3377confed_iana"},
+            }],
+            "derived_intra_loopback_v4": "100.64.32.5",
+            "route_domains": values["route_domains"],
+            "intra_global": values["intra_global"],
+        }
+        functions = render("filter.conf", **context)
+        filters = render("intra/ibgp.conf", **context).partition("template bgp")[0]
+        config = f"""
+router id 192.0.2.1;
+define INTRA_CONFEDERATION_START = 4220240000;
+define INTRA_CONFEDERATION_END = 4220249999;
+define POP_REGION = 44;
+define POP_COUNTRY = 1840;
+{defines}
+{functions}
+{filters}
+protocol static new_v4 {{
+    ipv4 {{ import filter intra_ibgp_import_full; }};
+    route 100.64.32.5/32 reject {{ bgp_large_community.add((4220240000, 2, 100)); }};
+}}
+protocol static old_dn42_v4 {{
+    ipv4 {{ import filter intra_ibgp_import_full; }};
+    route 100.64.22.2/32 reject {{ bgp_large_community.add((4242422024, 2, 100)); }};
+}}
+protocol static old_iana_v4 {{
+    ipv4 {{ import filter intra_ibgp_import_full; }};
+    route 100.64.12.3/32 reject {{ bgp_large_community.add((205369, 2, 100)); }};
+}}
+protocol static dn42_overlay_v4 {{
+    ipv4 {{ import filter intra_ibgp_import_full; }};
+    route 172.20.1.0/24 reject {{ bgp_large_community.add((4242422024, 2, 100)); }};
+}}
+protocol static old_dn42_v6 {{
+    ipv6 {{ import filter intra_ibgp_import_full; }};
+    route fd18:3e15:61d0:ffff:2:2::d131/128 reject {{ bgp_large_community.add((4242422024, 2, 100)); }};
+}}
+protocol static dn42_overlay_v6 {{
+    ipv6 {{ import filter intra_ibgp_import_full; }};
+    route fdab::/48 reject {{ bgp_large_community.add((4242422024, 2, 100)); }};
+}}
+protocol static underlay_to_3377 {{
+    ipv4 {{ import filter intra_ibgp_export_3377confed_iana; }};
+    route 100.64.88.8/32 reject {{
+        bgp_large_community.add((4220240000, 2, 100));
+        bgp_large_community.add((205369, 2, 100));
+    }};
+}}
+protocol static iana_to_3377 {{
+    ipv6 {{ import filter intra_ibgp_export_3377confed_iana; }};
+    route 2001:db8:3377::1/128 reject {{
+        bgp_large_community.add((4220240000, 2, 100));
+        bgp_large_community.add((205369, 2, 100));
+    }};
+}}
+"""
+        with tempfile.TemporaryDirectory(prefix="bird-intra-community-test-") as directory:
+            path = Path(directory)
+            conf, sock = path / "bird.conf", path / "bird.ctl"
+            conf.write_text(config)
+            parsed = subprocess.run(["bird", "-p", "-c", str(conf)], capture_output=True, text=True)
+            self.assertEqual(parsed.returncode, 0, parsed.stderr)
+            with (path / "bird.log").open("w+") as log:
+                process = subprocess.Popen(
+                    ["bird", "-f", "-c", str(conf), "-s", str(sock), "-P", str(path / "bird.pid")],
+                    stdout=log, stderr=log,
+                )
+                try:
+                    for _ in range(100):
+                        if sock.exists() or process.poll() is not None:
+                            break
+                        time.sleep(0.02)
+
+                    def route(prefix):
+                        return subprocess.run(
+                            ["birdc", "-s", str(sock), "show", "route", prefix, "all"],
+                            capture_output=True, text=True,
+                        ).stdout
+
+                    for prefix, marker in (
+                        ("100.64.32.5/32", "(4220240000, 2, 100)"),
+                        ("100.64.22.2/32", "(4242422024, 2, 100)"),
+                        ("100.64.12.3/32", "(205369, 2, 100)"),
+                        ("fd18:3e15:61d0:ffff:2:2::d131/128", "(4242422024, 2, 100)"),
+                    ):
+                        with self.subTest(prefix=prefix):
+                            output = route(prefix)
+                            self.assertIn(str(ip_network(prefix)), output)
+                            self.assertIn(marker, output)
+                    self.assertIn("Network not found", route("172.20.1.0/24"))
+                    self.assertIn("Network not found", route("fdab::/48"))
+                    self.assertIn("Network not found", route("100.64.88.8/32"))
+                    external_iana = route("2001:db8:3377::1/128")
+                    self.assertIn("2001:db8:3377::1/128", external_iana)
+                    self.assertIn("(205369, 2, 100)", external_iana)
+                    self.assertNotIn("(4220240000, 2, 100)", external_iana)
+                finally:
+                    process.terminate()
+                    process.wait(timeout=5)
+
     def test_cross_region_same_region_retag_and_preserve_controls(self):
         values = variables()
         defines = "\n".join(f"define COMM_{key} = {value};" for key, value in values["bgp_community"].items())

@@ -1,14 +1,16 @@
 # Community Boundaries
 
-The community registry is `group_vars/all/communities.yml`. IANA evaluates
-AS205369 controls; DN42 evaluates AS4242422024 controls.
+The community registry is `group_vars/all/communities.yml`. Intra route identity
+uses AS4220240000; IANA evaluates AS205369 controls; DN42 evaluates
+AS4242422024 controls.
 
 ## External Import
 
 `remove_internal_communities()` removes `FN_IDENTIFY` (2), `FN_GEO_SRC` (644),
-and `FN_GEO_DST` (645) under each enabled own-AS namespace. External sessions
-then assign their own origin and geography markers. This prevents imported
-routes from supplying internal identities or another domain's geo markers.
+and `FN_GEO_DST` (645) under the intra, IANA, and DN42 namespaces, independent
+of which route domains are enabled. External sessions then assign their own
+origin and geography markers. This prevents imported routes from supplying
+internal identities or another domain's geo markers.
 
 All other communities, including peer-supplied own-AS export controls, survive
 import and can travel through the confederation. Existing route validation
@@ -17,7 +19,11 @@ and internal origin requirements still apply.
 ## Internal Transport
 
 Confederation and IANA iBGP sessions preserve identity, geography, and export
-controls. They do not consume controls intended for external neighbors.
+controls. Underlay loopbacks use `(4220240000, 2, 100)` independently of the
+DN42 and IANA module switches. During migration, loopbacks also carry the old
+DN42 and IANA identity markers so nodes can be updated without interrupting
+route exchange. Internal sessions accept legacy markers only on underlay
+prefixes. They do not consume controls intended for external neighbors.
 Existing NO_ADVERTISE restrictions still apply.
 
 ## External Export
@@ -27,7 +33,8 @@ The processing order is:
 1. Apply the existing domain and origin eligibility checks.
 2. Evaluate the domain's controls for the target ASN and geography (deny/only,
    prepend, attach).
-3. Remove confederation ASNs and internal identity/geography markers.
+3. Remove confederation ASNs and all intra, DN42, and IANA identity/geography
+   markers. These markers are internal-only and never leave an external peer.
 4. Remove implemented own-AS controls with `remove_export_control_communities()`.
 5. Accept the route.
 

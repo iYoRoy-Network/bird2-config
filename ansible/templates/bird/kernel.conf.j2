@@ -10,6 +10,7 @@ protocol kernel kernel_v4{
         import none;
         export filter {
             if source = RTS_STATIC then {
+                if net ~ {{ intra_global.prefix_v4 }} && bgp_large_community ~ [({{ route_domains.intra.origin_as }},COMM_FN_IDENTIFY,COMM_ORIGIN_CUSTOMER)] then accept;
 {% for own_as in route_origin_asns %}                if bgp_large_community ~ [({{ own_as }},*,*)] then accept;
 {% endfor %}                if bgp_community ~ [(65535,65282)] then accept;
                 reject;
@@ -27,6 +28,7 @@ protocol kernel kernel_v6 {
         import none;
         export filter {
             if source = RTS_STATIC then {
+                if net ~ {{ intra_global.prefix_v6 }} && bgp_large_community ~ [({{ route_domains.intra.origin_as }},COMM_FN_IDENTIFY,COMM_ORIGIN_CUSTOMER)] then accept;
 {% for own_as in route_origin_asns %}                if bgp_large_community ~ [({{ own_as }},*,*)] then accept;
 {% endfor %}                if bgp_community ~ [(65535,65282)] then accept;
                 reject;
