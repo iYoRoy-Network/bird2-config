@@ -3,7 +3,6 @@ intra:
     enabled: true
   auto_confed_peers:
     - node: fra01-de
-      interface: intra_fra01
       wireguard:
         public_key: 4zEFOrqHdIDPcjvu6NwbE1AAYBH1bA+SAowysX5fRT4=
         listen_port: 10228
@@ -11,8 +10,6 @@ intra:
         address_mode: intra_local
         persistent_keepalive: 10
       bgp:
-        file: fra01.conf
-        protocol: intra_ibgp_fra01
         ipv4:
           import_policy: dn42_full
           export_policy: dn42_full

@@ -3,7 +3,6 @@ intra:
     enabled: true
   auto_confed_peers:
     - node: fra02-de
-      interface: intra_fra02
       wireguard:
         public_key: m7HQia4TdZB2vyI4ajcSlKv9Y/qbhsKiz+HDvsx6nno=
         listen_port: 10001
@@ -11,8 +10,6 @@ intra:
         address_mode: intra_local
         persistent_keepalive: 10
       bgp:
-        file: fra02.conf
-        protocol: intra_ibgp_fra02
         ipv4:
           import_policy: dn42_full
           export_policy: dn42_full
@@ -20,15 +17,12 @@ intra:
           import_policy: dn42_full
           export_policy: dn42_full
     - node: cdg01-fr
-      interface: intra_cdg01
       wireguard:
         public_key: vLZLdiJrDyGpUIY5y/qR5XIvyaWCcTM4uk9Y6kdIKk8=
         listen_port: 10123
         fwmark: '4242'
         address_mode: intra_local
       bgp:
-        file: cdg01.conf
-        protocol: intra_ibgp_cdg01
         ipv4:
           import_policy: full
           export_policy: full
@@ -36,15 +30,12 @@ intra:
           import_policy: full
           export_policy: full
     - node: lax01-us
-      interface: intra_lax01
       wireguard:
         public_key: As0rZo5b9Bwt4loPGl6iSdtOqkd2p6ExK/Xyoy9OmTU=
         listen_port: 10229
         fwmark: '4242'
         address_mode: intra_local
       bgp:
-        file: lax01.conf
-        protocol: intra_ibgp_lax01
         ipv4:
           import_policy: dn42_full
           export_policy: dn42_full
@@ -52,15 +43,12 @@ intra:
           import_policy: dn42_full
           export_policy: dn42_full
     - node: tyo01-jp
-      interface: intra_tyo01
       wireguard:
         public_key: Sh62ZCxnEcXyLq49mLP1jF4C2vWKhKMxjtZHxVUAQg4=
         listen_port: 10227
         fwmark: '4242'
         address_mode: intra_local
       bgp:
-        file: tyo01.conf
-        protocol: intra_ibgp_tyo01
         ipv4:
           import_policy: full
           export_policy: full

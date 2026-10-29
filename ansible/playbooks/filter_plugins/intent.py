@@ -14,8 +14,24 @@ CONFED_PROTOCOL_PREFIX = "intra_confed_"
 
 def _confed_protocol_for_node(node):
     """Return the stable protocol ID for an automatic intra peer."""
-    label = str(node).split("-", 1)[0]
-    return CONFED_PROTOCOL_PREFIX + label
+    return CONFED_PROTOCOL_PREFIX + _confed_node_label(node)
+
+
+def _confed_node_label(node):
+    if not isinstance(node, str):
+        raise AnsibleFilterError("Intra peer node must be a string")
+    label = node.split("-", 1)[0]
+    if not re.fullmatch(r"[A-Za-z0-9_]+", label):
+        raise AnsibleFilterError("Cannot derive intra peer names from node %r" % node)
+    return label
+
+
+def _confed_interface_for_node(node):
+    return "intra_" + _confed_node_label(node)
+
+
+def _confed_file_for_node(node):
+    return _confed_node_label(node) + ".conf"
 
 
 def _confed_protocol_for_file(filename):
@@ -207,12 +223,14 @@ def materialize_intent(config, hostvars, hostname, defaults):
         tunnel_peer = {key: wg[key] for key in ("public_key", "allowed_ips", "endpoints", "persistent_keepalive", "preshared_key_ref") if key in wg}
         if endpoint and not wg.get("passive", False):
             tunnel_peer["endpoint"] = endpoint
+        peer_interface = _confed_interface_for_node(peer["node"])
         interface = {key: wg[key] for key in ("address_mode", "listen_port", "table", "post_up", "fwmark", "mtu", "private_key_ref", "pre_up", "pre_down", "post_down", "address") if key in wg}
-        interfaces.append({**interface, "name": peer["interface"], "peer": tunnel_peer})
+        interfaces.append({**interface, "name": peer_interface, "peer": tunnel_peer})
+        bgp = {**(peer.get("bgp") or {}),
+               "file": _confed_file_for_node(peer["node"]),
+               "protocol": _confed_protocol_for_node(peer["node"])}
         sessions.append(intra_session(
-            {**peer.get("bgp", {}),
-             "neighbor": {"node": peer["node"], "interface": peer["interface"]}},
-            default_protocol=_confed_protocol_for_node(peer["node"]),
+            {**bgp, "neighbor": {"node": peer["node"], "interface": peer_interface}},
         ))
         validate_intra_domains(sessions[-1], dn42.get("enabled", False),
                                config.get("iana", {}).get("enabled", False))

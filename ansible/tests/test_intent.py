@@ -113,22 +113,41 @@ class IntentTests(unittest.TestCase):
             "fra01-de": {
                 "node": {"wireguard_endpoint_host": "fra01.example"},
                 "intra": {"auto_confed_peers": [{
-                    "node": "fra03-de", "wireguard": {"listen_port": 10325},
+                    "node": "fra03-de", "interface": "legacy0",
+                    "wireguard": {"listen_port": 10325},
                 }]},
             },
             "fra03-de": {
                 "node": {"wireguard_endpoint_host": "fra03.example"},
                 "intra": {"auto_confed_peers": [{
-                    "node": "fra01-de", "interface": "intra_fra01",
+                    "node": "fra01-de", "interface": "legacy_local",
                     "wireguard": {"public_key": "test-key", "listen_port": 50225},
-                    "bgp": {"file": "fra01.conf"},
+                    "bgp": {
+                        "file": "legacy.conf", "protocol": "legacy_protocol",
+                    },
                 }]},
             },
         }
         intent = INTENT.materialize_intent(
             hosts["fra03-de"], hosts, "fra03-de", {"intra": {}, "dn42": {}}
         )
-        self.assertEqual(intent["intra_ibgp_sessions"][0]["protocol"], "intra_confed_fra01")
+        session = intent["intra_ibgp_sessions"][0]
+        self.assertEqual(intent["wireguard_interfaces"][0]["name"], "intra_fra01")
+        self.assertEqual(session["file"], "fra01.conf")
+        self.assertEqual(session["protocol"], "intra_confed_fra01")
+
+        hosts = {path.name: host_config(path.name)
+                 for path in (ROOT / "ansible/host_vars").iterdir() if (path / "node.yml").exists()}
+        defaults_config = yaml.safe_load((ROOT / "ansible/group_vars/all/wireguard.yml").read_text())
+        defaults = {"intra": defaults_config["intra_wireguard_defaults"],
+                    "dn42": defaults_config["dn42_wireguard_defaults"]}
+        hkg02 = hosts["hkg02-hk"]
+        hkg02_intent = INTENT.materialize_intent(hkg02, hosts, "hkg02-hk", defaults)
+        external_confed = next(
+            session for session in hkg02_intent["intra_ibgp_sessions"]
+            if session["file"] == "hkg_9cce.conf"
+        )
+        self.assertEqual(external_confed["neighbor"]["interface"], "dn42_4242423377")
 
     def test_regional_aggregates_use_continent_export_communities(self):
         domains = yaml.safe_load((ROOT / "ansible/group_vars/all/domains.yml").read_text())

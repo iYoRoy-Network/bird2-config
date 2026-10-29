@@ -3,15 +3,12 @@ intra:
     enabled: true
   auto_confed_peers:
     - node: hkg04-hk
-      interface: intra_hkg04
       wireguard:
         public_key: 1tn6T2xi+zEnNi8X7ssGH9M3WOeq1xDjZNX3mMkO7Qk=
         listen_port: 10235
         persistent_keepalive: 30
         fwmark: '4242'
       bgp:
-        file: hkg04.conf
-        protocol: intra_ibgp_hkg04
         ipv4:
           import_policy: full
           export_policy: full
@@ -19,7 +16,6 @@ intra:
           import_policy: full
           export_policy: full
     - node: tyo03-jp
-      interface: intra_tyo03
       wireguard:
         public_key: lCx0qzITDvh2ZIfNppOttFnKFa16fCqDGn7mWufMzGE=
         listen_port: 10234
@@ -27,8 +23,6 @@ intra:
         address_mode: intra_local
         persistent_keepalive: 30
       bgp:
-        file: tyo03.conf
-        protocol: intra_ibgp_tyo03
         ipv4:
           import_policy: full
           export_policy: full
