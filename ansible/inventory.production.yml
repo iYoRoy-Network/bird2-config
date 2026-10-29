@@ -7,6 +7,8 @@ bird_nodes:
       ansible_host: ipv4.fra01-de.ecs.iyoroy-infra.top
     fra02-de:
       ansible_host: ipv6.fra02-de.ecs.iyoroy-infra.top
+    fra03-de:
+      ansible_host: ipv4.fra03-de.ecs.iyoroy-infra.top
     hkg01-hk:
       ansible_host: ipv4.hkg01-hk.ecs.iyoroy-infra.top
       ansible_ssh_common_args: '-o ProxyCommand="ssh -W %h:%p -q -i ~/keys/default/id_ed25519 root@pvg01-cn.ecs.iyoroy-infra.top"'

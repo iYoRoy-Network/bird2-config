@@ -16,6 +16,20 @@ intra:
         ipv6:
           import_policy: dn42_full
           export_policy: dn42_full
+    - node: fra03-de
+      wireguard:
+        public_key: 1d3RCzLqIC/m9X3Fq4Za1Xp88lQ2mxYq7tZ1PfK3CVc=
+        listen_port: 10325
+        fwmark: '4242'
+        address_mode: intra_local
+        persistent_keepalive: 10
+      bgp:
+        ipv4:
+          import_policy: full
+          export_policy: full
+        ipv6:
+          import_policy: full
+          export_policy: full
     - node: cdg01-fr
       wireguard:
         public_key: vLZLdiJrDyGpUIY5y/qR5XIvyaWCcTM4uk9Y6kdIKk8=

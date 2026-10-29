@@ -1,0 +1,34 @@
+iana:
+  enabled: true
+  upstreams6:
+  - protocol: iana_upstream_44324
+    description: MoeDove
+    neighbor:
+      address: 2001:7f8:1a:91::13
+      asn: 44324
+    geo:
+      region: EUROPE
+      country: GERMANY
+  downstreams: []
+  peers:
+  - protocol: iana_ix_218418_rs1
+    geo:
+      region: EUROPE
+      country: GERMANY
+    description: "91-IX"
+    local: 2001:7f8:1a:91::241
+    neighbor:
+      address: 2001:7f8:1a:91::1
+      asn: 218418
+    as_set: "none"
+    enforce_first_as: false
+  ibgp:
+    enabled: false
+    sessions: []
+  static:
+    advertise_routes:
+    - prefix: 2a14:7583:f240::/43
+      communities: "{{ iana_global.export_to_continent_communities.EUROPE }}"
+    - "{{ iana_global.anycast_net_v6 }}"
+    extra_routes: []
+  router_id: 217.217.87.80

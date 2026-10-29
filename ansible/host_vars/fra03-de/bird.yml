@@ -1,0 +1,2 @@
+bird:
+  log_syslog_all: false
