@@ -5,7 +5,8 @@
       {{ {'intra': intra | default({}), 'dn42': dn42 | default({}),
            'iana': iana | default({}), 'wireguard': wireguard | default({})}
          | materialize_intent(hostvars, inventory_hostname,
-             {'intra': intra_wireguard_defaults, 'dn42': dn42_wireguard_defaults}) }}
+             {'intra': intra_wireguard_defaults, 'dn42': dn42_wireguard_defaults,
+              'intra_global': intra_global}) }}
 
 - name: Expose normalized transport and session lists
   ansible.builtin.set_fact:

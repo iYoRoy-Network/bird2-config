@@ -34,6 +34,10 @@ iana_global:
 intra_global:
   confederation_start: 4220240000
   confederation_end: 4220249999
+  wireguard_listen_port_manual_nodes:
+    - hkg04-hk
+    - tyo03-jp
+    - cdg01-fr
   prefix_v4: '[ 100.64.0.0/16+ ]'
   prefix_v6: '[ fd18:3e15:61d0:ffff::/64+ ]'
   loopback_v6_prefix: fd18:3e15:61d0:ffff

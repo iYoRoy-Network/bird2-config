@@ -60,6 +60,14 @@ autopeer src/dst input remain supported at this boundary; new peers should use
 `bgp.sessions` with explicit address families. Per-session geo overrides merge
 with the peer's geo.
 
+Automatic intra WireGuard listen ports are derived from the remote node's
+confederation ASN: `10000 + (remote ASN mod 10000)`. A peer's explicit
+`wireguard.listen_port` takes precedence. NAT nodes `hkg04-hk`, `tyo03-jp`, and
+`cdg01-fr` are listed in `intra_global.wireguard_listen_port_manual_nodes` and
+must keep explicit ports. Endpoint ports are resolved from the reciprocal
+peer's effective listener, so NAT mappings and automatically derived ports
+both work without duplicating endpoint values.
+
 `wireguard.standalone_interfaces` is for transports independent of managed
 peers. It remains supported and is validated alongside generated interfaces.
 Duplicate names, ports, protocols, session files, missing reciprocal intra

@@ -5,7 +5,6 @@ intra:
     - node: hkg02-hk
       wireguard:
         public_key: bg+KnzVupBrOQntHFFVzvBx+3sqYVoyJRantT6m5fm8=
-        listen_port: 10225
         fwmark: '4242'
         address_mode: intra_local
       bgp:
@@ -18,7 +17,6 @@ intra:
     - node: hkg04-hk
       wireguard:
         public_key: 1tn6T2xi+zEnNi8X7ssGH9M3WOeq1xDjZNX3mMkO7Qk=
-        listen_port: 10235
         fwmark: '4242'
         address_mode: intra_local
       bgp:

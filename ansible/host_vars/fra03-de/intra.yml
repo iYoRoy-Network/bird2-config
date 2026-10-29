@@ -5,7 +5,6 @@ intra:
     - node: fra01-de
       wireguard:
         public_key: 4zEFOrqHdIDPcjvu6NwbE1AAYBH1bA+SAowysX5fRT4=
-        listen_port: 10121
         address_mode: intra_local
       bgp:
         ipv4:

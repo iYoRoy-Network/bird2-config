@@ -5,7 +5,6 @@ intra:
     - node: hkg04-hk
       wireguard:
         public_key: 1tn6T2xi+zEnNi8X7ssGH9M3WOeq1xDjZNX3mMkO7Qk=
-        listen_port: 10235
         persistent_keepalive: 30
         fwmark: '4242'
       bgp:
@@ -18,7 +17,6 @@ intra:
     - node: tyo03-jp
       wireguard:
         public_key: lCx0qzITDvh2ZIfNppOttFnKFa16fCqDGn7mWufMzGE=
-        listen_port: 10234
         fwmark: '4242'
         address_mode: intra_local
         persistent_keepalive: 30

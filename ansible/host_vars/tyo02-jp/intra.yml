@@ -5,7 +5,6 @@ intra:
     - node: tyo01-jp
       wireguard:
         public_key: Sh62ZCxnEcXyLq49mLP1jF4C2vWKhKMxjtZHxVUAQg4=
-        listen_port: 10227
         fwmark: '4242'
         address_mode: intra_local
       bgp:
@@ -18,7 +17,6 @@ intra:
     - node: tyo03-jp
       wireguard:
         public_key: lCx0qzITDvh2ZIfNppOttFnKFa16fCqDGn7mWufMzGE=
-        listen_port: 10234
         address_mode: intra_local
         passive: true
       bgp:

@@ -5,7 +5,6 @@ intra:
     - node: cdg01-fr
       wireguard:
         public_key: vLZLdiJrDyGpUIY5y/qR5XIvyaWCcTM4uk9Y6kdIKk8=
-        listen_port: 10123
         fwmark: '4242'
         address_mode: intra_local
       bgp:

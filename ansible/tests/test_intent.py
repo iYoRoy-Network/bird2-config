@@ -23,6 +23,14 @@ def host_config(host):
     return result
 
 
+def intent_defaults():
+    wireguard = yaml.safe_load((ROOT / "ansible/group_vars/all/wireguard.yml").read_text())
+    domains = yaml.safe_load((ROOT / "ansible/group_vars/all/domains.yml").read_text())
+    return {"intra": wireguard["intra_wireguard_defaults"],
+            "dn42": wireguard["dn42_wireguard_defaults"],
+            "intra_global": domains["intra_global"]}
+
+
 class IntentTests(unittest.TestCase):
     def test_legacy_transport_normalization_and_explicit_families(self):
         legacy = {"asn": 65000, "src": "192.0.2.1", "dst": "192.0.2.2",
@@ -41,8 +49,7 @@ class IntentTests(unittest.TestCase):
     def test_topology_is_independent_of_management_inventory(self):
         hosts = {path.name: host_config(path.name)
                  for path in (ROOT / "ansible/host_vars").iterdir() if (path / "node.yml").exists()}
-        defaults = yaml.safe_load((ROOT / "ansible/group_vars/all/wireguard.yml").read_text())
-        defaults = {"intra": defaults["intra_wireguard_defaults"], "dn42": defaults["dn42_wireguard_defaults"]}
+        defaults = intent_defaults()
         config = {"intra": hosts["hkg02-hk"]["intra"],
                   "dn42": {"enabled": True}, "iana": {"enabled": True}}
         first = INTENT.materialize_intent(config, hosts, "hkg02-hk", defaults)
@@ -55,13 +62,12 @@ class IntentTests(unittest.TestCase):
     def test_cdg_lhr_preserve_transport_and_policy_intent(self):
         hosts = {path.name: host_config(path.name)
                  for path in (ROOT / "ansible/host_vars").iterdir() if (path / "node.yml").exists()}
-        values = yaml.safe_load((ROOT / "ansible/group_vars/all/wireguard.yml").read_text())
-        defaults = {"intra": values["intra_wireguard_defaults"], "dn42": values["dn42_wireguard_defaults"]}
+        defaults = intent_defaults()
         expected = {
             "cdg01-fr": [("fra01", "full", 50225), ("hkg02", "default", 50226),
                          ("lax01", "dn42_full", 50227), ("tyo01", "default", 50228),
                          ("lhr01", "full", 50229)],
-            "lhr01-uk": [("cdg01", "full", 10123)],
+            "lhr01-uk": [("cdg01", "full", 11203)],
         }
         for host, links in expected.items():
             with self.subTest(host=host):
@@ -89,7 +95,7 @@ class IntentTests(unittest.TestCase):
                     self.assertEqual(interface["name"], "intra_" + remote)
                     self.assertEqual(interface["listen_port"], port)
                     endpoint_host = hosts[session["neighbor"]["node"]]["node"]["wireguard_endpoint_host"]
-                    endpoint_port = 50229 if host == "lhr01-uk" else 10123
+                    endpoint_port = 50229 if host == "lhr01-uk" else 11203
                     self.assertEqual(interface["peer"]["endpoint"], "%s:%s" % (endpoint_host, endpoint_port))
                     for family in ("ipv4", "ipv6"):
                         self.assertEqual(session[family], {"import_policy": policy, "export_policy": policy})
@@ -138,9 +144,7 @@ class IntentTests(unittest.TestCase):
 
         hosts = {path.name: host_config(path.name)
                  for path in (ROOT / "ansible/host_vars").iterdir() if (path / "node.yml").exists()}
-        defaults_config = yaml.safe_load((ROOT / "ansible/group_vars/all/wireguard.yml").read_text())
-        defaults = {"intra": defaults_config["intra_wireguard_defaults"],
-                    "dn42": defaults_config["dn42_wireguard_defaults"]}
+        defaults = intent_defaults()
         hkg02 = hosts["hkg02-hk"]
         hkg02_intent = INTENT.materialize_intent(hkg02, hosts, "hkg02-hk", defaults)
         external_confed = next(
@@ -148,6 +152,69 @@ class IntentTests(unittest.TestCase):
             if session["file"] == "hkg_9cce.conf"
         )
         self.assertEqual(external_confed["neighbor"]["interface"], "dn42_4242423377")
+
+    def test_intra_wireguard_port_is_derived_from_peer_as(self):
+        intra_global = {
+            "confederation_start": 4220240000,
+            "confederation_end": 4220249999,
+            "confederation_as_format": "422024%d%d%02d",
+            "wireguard_listen_port_manual_nodes": ["nat-node"],
+        }
+        hosts = {
+            "edge-a": {
+                "node": {"tier": 1, "region": 1, "node_id": 1,
+                         "wireguard_endpoint_host": "a.example"},
+                "intra": {"auto_confed_peers": [
+                    {"node": "edge-b", "wireguard": {}},
+                    {"node": "nat-node", "wireguard": {}}]},
+            },
+            "edge-b": {
+                "node": {"tier": 1, "region": 2, "node_id": 2,
+                         "wireguard_endpoint_host": "b.example"},
+                "intra": {"auto_confed_peers": [{"node": "edge-a", "wireguard": {}}]},
+            },
+            "nat-node": {
+                "node": {"tier": 1, "region": 3, "node_id": 3,
+                         "wireguard_endpoint_host": "nat.example"},
+                "intra": {"auto_confed_peers": [{"node": "edge-a", "wireguard": {}}]},
+            },
+        }
+        hosts["nat-node"]["intra"]["auto_confed_peers"][0]["wireguard"]["listen_port"] = 45678
+        defaults = {"intra": {}, "dn42": {}, "intra_global": intra_global}
+        a_intent = INTENT.materialize_intent(hosts["edge-a"], hosts, "edge-a", defaults)
+        b_intent = INTENT.materialize_intent(hosts["edge-b"], hosts, "edge-b", defaults)
+        self.assertEqual(a_intent["wireguard_interfaces"][0]["listen_port"], 11202)
+        self.assertEqual(a_intent["wireguard_interfaces"][0]["peer"]["endpoint"], "b.example:11101")
+        self.assertEqual(b_intent["wireguard_interfaces"][0]["listen_port"], 11101)
+        self.assertEqual(b_intent["wireguard_interfaces"][0]["peer"]["endpoint"], "a.example:11202")
+
+        hosts["edge-b"]["intra"]["auto_confed_peers"][0]["wireguard"]["listen_port"] = 23456
+        b_intent = INTENT.materialize_intent(hosts["edge-b"], hosts, "edge-b", defaults)
+        a_intent = INTENT.materialize_intent(hosts["edge-a"], hosts, "edge-a", defaults)
+        self.assertEqual(b_intent["wireguard_interfaces"][0]["listen_port"], 23456)
+        self.assertEqual(a_intent["wireguard_interfaces"][0]["peer"]["endpoint"], "b.example:23456")
+
+        nat_intent = INTENT.materialize_intent(hosts["nat-node"], hosts, "nat-node", defaults)
+        a_intent = INTENT.materialize_intent(hosts["edge-a"], hosts, "edge-a", defaults)
+        self.assertEqual(nat_intent["wireguard_interfaces"][0]["listen_port"], 45678)
+        self.assertEqual(a_intent["wireguard_interfaces"][1]["peer"]["endpoint"], "nat.example:45678")
+
+        del hosts["nat-node"]["intra"]["auto_confed_peers"][0]["wireguard"]["listen_port"]
+        with self.assertRaisesRegex(AnsibleFilterError, "requires an explicit listen_port"):
+            INTENT.materialize_intent(hosts["nat-node"], hosts, "nat-node", defaults)
+
+    def test_current_inventory_keeps_explicit_intra_ports_on_nat_nodes(self):
+        defaults = intent_defaults()
+        manual_nodes = set(defaults["intra_global"]["wireguard_listen_port_manual_nodes"])
+        hosts = {path.name: host_config(path.name)
+                 for path in (ROOT / "ansible/host_vars").iterdir() if (path / "node.yml").exists()}
+        for hostname, config in hosts.items():
+            for peer in config.get("intra", {}).get("auto_confed_peers", []):
+                explicit = "listen_port" in peer.get("wireguard", {})
+                self.assertEqual(explicit, hostname in manual_nodes,
+                                 "%s -> %s has unexpected listen_port override" % (hostname, peer["node"]))
+        for hostname, config in hosts.items():
+            INTENT.materialize_intent(config, hosts, hostname, defaults)
 
     def test_regional_aggregates_use_continent_export_communities(self):
         domains = yaml.safe_load((ROOT / "ansible/group_vars/all/domains.yml").read_text())

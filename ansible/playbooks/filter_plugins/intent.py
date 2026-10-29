@@ -167,6 +167,45 @@ def unique(items, key, label):
         seen.add(value)
 
 
+def _intra_confed_as(node, intra_global):
+    try:
+        value = int(intra_global["confederation_as_format"] % (
+            int(node["tier"]), int(node["region"]), int(node["node_id"])))
+        start = int(intra_global["confederation_start"])
+        end = int(intra_global["confederation_end"])
+    except (KeyError, TypeError, ValueError) as exc:
+        raise AnsibleFilterError("Cannot derive intra confederation AS from node metadata") from exc
+    if not start <= value <= end:
+        raise AnsibleFilterError("Derived intra confederation AS %s is out of range" % value)
+    return value
+
+
+def _intra_listen_port(owner, peer, hostvars, intra_global):
+    """Resolve one node's WG port for its intra peer, honoring explicit ports."""
+    wireguard = peer.get("wireguard", {})
+    if not isinstance(wireguard, dict):
+        raise AnsibleFilterError("Invalid intra WireGuard settings for %s" % owner)
+    if "listen_port" in wireguard:
+        try:
+            port = int(wireguard["listen_port"])
+        except (TypeError, ValueError) as exc:
+            raise AnsibleFilterError("Invalid intra WireGuard listen_port for %s" % owner) from exc
+        if not 1 <= port <= 65535:
+            raise AnsibleFilterError("Invalid intra WireGuard listen_port for %s" % owner)
+        return port
+
+    manual_nodes = intra_global.get("wireguard_listen_port_manual_nodes", [])
+    if owner in manual_nodes:
+        raise AnsibleFilterError(
+            "Intra WireGuard node %s requires an explicit listen_port" % owner)
+    target = hostvars.get(peer.get("node"), {})
+    node = target.get("node")
+    if not isinstance(node, dict):
+        raise AnsibleFilterError("Cannot derive intra WireGuard port: missing node metadata for %s" % peer.get("node"))
+    peer_as = _intra_confed_as(node, intra_global)
+    return 10000 + peer_as % 10000
+
+
 def irr_queries(iana):
     queries = {}
     for role, key in (("downstream", "downstreams"), ("peer", "peers")):
@@ -202,6 +241,7 @@ def irr_defines(snapshot, queries):
 def materialize_intent(config, hostvars, hostname, defaults):
     """Build transport interfaces and internal sessions without mutating input."""
     intra, dn42, wireguard = (config.get(name, {}) for name in ("intra", "dn42", "wireguard"))
+    intra_global = defaults.get("intra_global", {})
     interfaces, sessions, dn42_peer_sessions = [], [], []
     for peer in intra.get("auto_confed_peers", []):
         remote = hostvars.get(peer["node"])
@@ -212,6 +252,7 @@ def materialize_intent(config, hostvars, hostname, defaults):
         if len(reciprocal) != 1:
             raise AnsibleFilterError("Expected one reciprocal link %s -> %s" % (peer["node"], hostname))
         wg = {**defaults["intra"], **peer.get("wireguard", {})}
+        wg["listen_port"] = _intra_listen_port(hostname, peer, hostvars, intra_global)
         endpoint_host = remote.get("node", {}).get("wireguard_endpoint_host")
         endpoint = wg.get("endpoint")
         if endpoint is None and not wg.get("passive", False):
@@ -219,7 +260,8 @@ def materialize_intent(config, hostvars, hostname, defaults):
                 raise AnsibleFilterError("Set node.wireguard_endpoint_host or explicit endpoint for %s" % peer["node"])
             if ":" in endpoint_host:
                 endpoint_host = "[" + endpoint_host.strip("[]") + "]"
-            endpoint = "%s:%s" % (endpoint_host, reciprocal[0]["wireguard"]["listen_port"])
+            remote_port = _intra_listen_port(peer["node"], reciprocal[0], hostvars, intra_global)
+            endpoint = "%s:%s" % (endpoint_host, remote_port)
         tunnel_peer = {key: wg[key] for key in ("public_key", "allowed_ips", "endpoints", "persistent_keepalive", "preshared_key_ref") if key in wg}
         if endpoint and not wg.get("passive", False):
             tunnel_peer["endpoint"] = endpoint

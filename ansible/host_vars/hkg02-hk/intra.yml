@@ -5,7 +5,6 @@ intra:
     - node: lax01-us
       wireguard:
         public_key: As0rZo5b9Bwt4loPGl6iSdtOqkd2p6ExK/Xyoy9OmTU=
-        listen_port: 10229
         fwmark: '4242'
         address_mode: intra_local
       bgp:
@@ -18,12 +17,10 @@ intra:
     - node: cdg01-fr
       wireguard:
         public_key: vLZLdiJrDyGpUIY5y/qR5XIvyaWCcTM4uk9Y6kdIKk8=
-        listen_port: 10123
         address_mode: intra_local
     - node: tyo01-jp
       wireguard:
         public_key: Sh62ZCxnEcXyLq49mLP1jF4C2vWKhKMxjtZHxVUAQg4=
-        listen_port: 10227
         fwmark: '4242'
         address_mode: intra_local
       bgp:
@@ -36,7 +33,6 @@ intra:
     - node: hkg01-hk
       wireguard:
         public_key: p8K4/FOb+KjT96Xc9efqHbCp60sNefFf2kZSmokzDHs=
-        listen_port: 10232
         fwmark: '4242'
         address_mode: intra_local
       bgp:
@@ -49,7 +45,6 @@ intra:
     - node: hkg03-hk
       wireguard:
         public_key: gNiB+ZAfvxIthwuCLUxZ9QS/RYWyp0OW4rsdODm+NXc=
-        listen_port: 10002
         fwmark: '4242'
         address_mode: intra_local
       bgp:
@@ -62,7 +57,6 @@ intra:
     - node: hkg04-hk
       wireguard:
         public_key: 1tn6T2xi+zEnNi8X7ssGH9M3WOeq1xDjZNX3mMkO7Qk=
-        listen_port: 10235
         fwmark: '4242'
         address_mode: intra_local
       bgp:

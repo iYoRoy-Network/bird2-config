@@ -5,7 +5,6 @@ intra:
     - node: fra01-de
       wireguard:
         public_key: 4zEFOrqHdIDPcjvu6NwbE1AAYBH1bA+SAowysX5fRT4=
-        listen_port: 10228
         address_mode: intra_local
       bgp:
         ipv4:
@@ -17,7 +16,6 @@ intra:
     - node: cdg01-fr
       wireguard:
         public_key: vLZLdiJrDyGpUIY5y/qR5XIvyaWCcTM4uk9Y6kdIKk8=
-        listen_port: 10123
         address_mode: intra_local
       bgp:
         ipv4:
@@ -29,7 +27,6 @@ intra:
     - node: hkg02-hk
       wireguard:
         public_key: bg+KnzVupBrOQntHFFVzvBx+3sqYVoyJRantT6m5fm8=
-        listen_port: 10225
         address_mode: intra_local
       bgp:
         ipv4:
@@ -41,7 +38,6 @@ intra:
     - node: tyo01-jp
       wireguard:
         public_key: Sh62ZCxnEcXyLq49mLP1jF4C2vWKhKMxjtZHxVUAQg4=
-        listen_port: 10227
         address_mode: intra_local
       bgp:
         ipv4:
