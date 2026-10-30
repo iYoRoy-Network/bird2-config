@@ -10,6 +10,9 @@ service recovery. This can briefly interrupt a changed tunnel.
 Recovery tracks active and enabled states separately. Scoped recovery restores
 only the named configuration and its previous manifest. Helpers serialize
 application with a lock, and each invocation uploads to an isolated directory.
+For systemd starts, an existing WireGuard device whose unit is inactive is
+stopped with its previous config before starting the desired config; if that
+previous config is unavailable, deployment fails without deleting the device.
 
 These are per-component transactions, not one distributed transaction across
 WireGuard and BIRD. A successful tunnel update remains applied if a subsequent

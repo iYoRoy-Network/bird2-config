@@ -2,6 +2,7 @@ import argparse
 import contextlib
 import io
 import json
+import subprocess
 from pathlib import Path
 import shutil
 import sys
@@ -17,6 +18,34 @@ WG = plugin("wireguard_deploy", "files")
 
 
 class DeploymentTests(unittest.TestCase):
+    def test_wireguard_orphaned_interface_is_stopped_with_previous_config(self):
+        with tempfile.TemporaryDirectory() as directory:
+            config = Path(directory) / "intra_hkg03.conf"
+            config.write_text("old config")
+            calls = []
+
+            def run(command, check=True):
+                calls.append(command)
+                if command[:3] == ["wg", "show", "intra_hkg03"]:
+                    return subprocess.CompletedProcess(command, 0, "", "")
+                return subprocess.CompletedProcess(command, 0, "", "")
+
+            with patch.object(WG, "run", side_effect=run):
+                self.assertTrue(WG.remove_orphaned_interface("intra_hkg03", config))
+
+            self.assertEqual(calls, [
+                ["wg", "show", "intra_hkg03"],
+                ["wg-quick", "down", str(config)],
+            ])
+
+    def test_wireguard_orphaned_interface_without_previous_config_is_preserved(self):
+        with tempfile.TemporaryDirectory() as directory:
+            missing_config = Path(directory) / "missing.conf"
+            with patch.object(WG, "run", return_value=subprocess.CompletedProcess([], 0, "", "")) as run:
+                with self.assertRaisesRegex(RuntimeError, "no previous config is available"):
+                    WG.remove_orphaned_interface("intra_hkg03", missing_config)
+            run.assert_called_once_with(["wg", "show", "intra_hkg03"], check=False)
+
     def test_bird_failed_reload_restores_and_reloads_previous_tree(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

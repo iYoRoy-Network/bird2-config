@@ -88,6 +88,17 @@ def active_interfaces(service_manager, interfaces):
     return active
 
 
+def remove_orphaned_interface(interface, previous_config):
+    if run(["wg", "show", interface], check=False).returncode != 0:
+        return False
+    if not previous_config.is_file():
+        raise RuntimeError(
+            "WireGuard interface %s exists outside an active service, but no previous config is available to stop it safely"
+            % interface)
+    run(["wg-quick", "down", str(previous_config)])
+    return True
+
+
 def service_command(service_manager, action, interface):
     if service_manager == "systemd":
         return ["systemctl", action, f"wg-quick@{interface}.service"]
@@ -272,7 +283,15 @@ def main():
         backup_available = backup_live(live_dir, args.backup_dir)
 
         def action(name, interface):
+            removed_orphan = False
+            if name == "start" and args.service_manager == "systemd":
+                previous_config = Path(args.backup_dir) / (interface + ".conf")
+                if not previous_config.is_file():
+                    previous_config = live_dir / (interface + ".conf")
+                removed_orphan = remove_orphaned_interface(interface, previous_config)
             result = apply_service_action(args.service_manager, name, interface, False)
+            if removed_orphan:
+                result["removed_orphaned_interface"] = True
             service_results.append(result)
             if result.get("failed"):
                 if name == "start" and interface in args.ignore_start_failure:
