@@ -48,6 +48,17 @@ intra:
         ipv6:
           import_policy: dn42_full
           export_policy: dn42_full
+    - node: lhr01-uk
+      wireguard:
+        fwmark: '4242'
+        address_mode: intra_local
+      bgp:
+        ipv4:
+          import_policy: full
+          export_policy: full
+        ipv6:
+          import_policy: full
+          export_policy: full
     - node: tyo01-jp
       wireguard:
         fwmark: '4242'

@@ -13,3 +13,14 @@ intra:
         ipv6:
           import_policy: full
           export_policy: full
+    - node: fra01-de
+      wireguard:
+        fwmark: '4242'
+        address_mode: intra_local
+      bgp:
+        ipv4:
+          import_policy: full
+          export_policy: full
+        ipv6:
+          import_policy: full
+          export_policy: full
