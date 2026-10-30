@@ -13,16 +13,15 @@ application with a lock, and each invocation uploads to an isolated directory.
 For systemd starts, an existing WireGuard device whose unit is inactive is
 stopped with its previous config before starting the desired config; if that
 previous config is unavailable, deployment fails without deleting the device.
+WireGuard start failures are recorded in `start_failures` and do not abort the
+deployment or roll back installed configs. The failed service remains visible
+to systemd/Looking Glass. Validation, transfer, stop, and enable failures remain
+fatal.
 
 These are per-component transactions, not one distributed transaction across
 WireGuard and BIRD. A successful tunnel update remains applied if a subsequent
 BIRD update fails. Inspect the failure before retrying. Rollback can also fail
 if the host or service becomes unavailable; recovery results must be checked.
-
-`deploy.wireguard.ignore_start_failures` may list interface names whose service
-start failures should be reported but not abort a full or scoped deployment.
-Their configs remain installed and enabled, and later deployments retry them.
-This does not ignore validation, upload, stop, or other service failures.
 
 Single-peer deployment modifies only its named peer, never other peer files.
 It requires the current shared BIRD functions to have been deployed separately.

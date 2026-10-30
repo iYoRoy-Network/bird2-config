@@ -104,8 +104,7 @@
                   '--backup-dir', peer_stage.path ~ '/wireguard-backup',
                   '--service-manager', deploy.service_manager | default('systemd'),
                   '--interface', peer_interface]
-                 + (deploy.wireguard.ignore_start_failures | default([])
-                    | map('regex_replace', '^', '--ignore-start-failure=') | list) }}
+                 }}
           no_log: true
           when: apply_wireguard | default(true) | bool
 

@@ -130,8 +130,6 @@
               '--node', inventory_hostname,
               '--service-manager', deploy.service_manager | default('systemd')
             ] + (['--dry-run'] if ansible_check_mode | bool else [])
-              + (deploy.wireguard.ignore_start_failures | default([])
-                 | map('regex_replace', '^', '--ignore-start-failure=') | list)
           }}
       register: wireguard_helper_result
       changed_when: "'\"changed\": true' in wireguard_helper_result.stdout"

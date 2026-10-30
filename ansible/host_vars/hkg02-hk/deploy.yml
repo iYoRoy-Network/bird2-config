@@ -4,5 +4,3 @@ deploy:
     enabled: true
   wireguard:
     enabled: true
-    ignore_start_failures:
-      - dn42_4242423311
