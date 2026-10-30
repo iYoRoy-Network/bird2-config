@@ -4,7 +4,6 @@ intra:
   auto_confed_peers:
     - node: tyo01-jp
       wireguard:
-        listen_port: 10227
         fwmark: '4242'
         address_mode: intra_local
       bgp:
@@ -16,7 +15,7 @@ intra:
           export_policy: full
     - node: tyo02-jp
       wireguard:
-        listen_port: 10230
+        fwmark: '4242'
         address_mode: intra_local
       bgp:
         ipv4:

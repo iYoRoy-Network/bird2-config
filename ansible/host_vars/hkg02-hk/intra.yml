@@ -15,6 +15,7 @@ intra:
           export_policy: dn42_full
     - node: cdg01-fr
       wireguard:
+        fwmark: '4242'
         address_mode: intra_local
     - node: tyo01-jp
       wireguard:

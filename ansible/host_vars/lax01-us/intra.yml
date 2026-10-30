@@ -4,6 +4,7 @@ intra:
   auto_confed_peers:
     - node: fra01-de
       wireguard:
+        fwmark: '4242'
         address_mode: intra_local
       bgp:
         ipv4:
@@ -14,6 +15,7 @@ intra:
           export_policy: dn42_full
     - node: cdg01-fr
       wireguard:
+        fwmark: '4242'
         address_mode: intra_local
       bgp:
         ipv4:
@@ -24,6 +26,7 @@ intra:
           export_policy: dn42_full
     - node: hkg02-hk
       wireguard:
+        fwmark: '4242'
         address_mode: intra_local
       bgp:
         ipv4:
@@ -34,6 +37,7 @@ intra:
           export_policy: dn42_full
     - node: tyo01-jp
       wireguard:
+        fwmark: '4242'
         address_mode: intra_local
       bgp:
         ipv4:
